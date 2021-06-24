@@ -48,3 +48,13 @@ Thumbs.db
 *.mov
 *.wmv
 
+.DS_Store
+
+package-lock.json
+
+yarn-lock.json
+
+.env
+
+service_account_prod.json
+service_account_dev.json
