@@ -8,5 +8,6 @@ services:
       - "3000:3000"
     volumes:
       - ./src:/var/www/zonap/src
-    env_file: ./source/.env
+      - ./node_modules:/var/www/zonap/node_modules
+    env_file: ./src/.env
     restart: on-failure
