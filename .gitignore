@@ -55,6 +55,12 @@ package-lock.json
 yarn.lock
 
 .env
+.env.prod
+.env.test
 
 service_account_prod.json
 service_account_dev.json
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

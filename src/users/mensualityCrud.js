@@ -3,13 +3,12 @@ const admin = require("firebase-admin");
 const hqCrud = require("../headquarters/crud");
 const recipManager = require("../payment/recips");
 const SNS = require("aws-sdk/clients/sns");
-const functions = require("firebase-functions");
 const moment = require("moment-timezone");
 
 const sns = new SNS({
   apiVersion: "2010-03-31",
-  accessKeyId: functions.config().aws.accesskey,
-  secretAccessKey: functions.config().aws.secretaccesskey,
+  accessKeyId: process.env.AWSSECRETACCESSKEY,
+  secretAccessKey: process.env.AWSACCESSKEY,
   region: "us-east-1",
 });
 

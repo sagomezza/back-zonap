@@ -1,5 +1,4 @@
 const admin = require("firebase-admin");
-const functions = require("firebase-functions");
 
 module.exports.createOfficial = async (parameter) => {
     return new Promise(async (resolve, reject) => {
@@ -51,7 +50,7 @@ module.exports.createOfficial = async (parameter) => {
             const response2 = await admin.auth().createUser({
                 email: parameter.email,
                 emailVerified: true,
-                password: functions.config().zonap.defaultpassword,
+                password: process.env.DEFAULTPASSWORD,
                 displayName: parameter.name + " " + parameter.lastName,
                 photoURL:
                     "https://cdn0.iconfinder.com/data/icons/elasto-online-store/26/00-ELASTOFONT-STORE-READY_user-circle-512.png",

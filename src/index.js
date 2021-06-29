@@ -1,10 +1,40 @@
 const express = require("express");
-const cors = require("cors")({ origin: true });
 let path = require("path");
 const admin = require("firebase-admin");
 var cron = require("node-cron");
 
 require("dotenv").config({ path: path.resolve(__dirname + "/.env") });
+
+const auth = require("./leancore/token");
+const create_user = require("./login/create_user");
+const requestOneTimePassword = require("./login/request_one_time_password");
+const verifyOneTimePassword = require("./login/verify_one_time_password");
+
+const adminCrud = require("./admins/crud");
+const userCrud = require("./users/crud");
+const officialCrud = require("./official/crud");
+const corporationCrud = require("./corporations/crud");
+const headquarterCrud = require("./headquarters/crud");
+const parkCrud = require("./parks/crud");
+const officialManager = require("./headquarters/officialManager");
+const parkingManager = require("./headquarters/parkingManager");
+const creditCardController = require("./payment/creditCard");
+const stripeController = require("./payment/stripeController");
+const qrController = require("./qr");
+const qrGenerator = require("./qr/genQr");
+const hqManager = require("./corporations/hqManager");
+const reservationManager = require("./headquarters/reservationManager");
+const recips = require("./payment/recips");
+const pay = require("./payment/pay");
+const paranoicsCrud = require("./users/paranoicsCrud");
+const shiftManager = require("./official/shift");
+const push = require("./notifications");
+const crons = require("./cron");
+const mensualityCrud = require("./users/mensualityCrud");
+const blackListCrud = require("./headquarters/blackList");
+const boxCrud = require("./official/boxClose");
+const newsReport = require("./official/newsReport");
+const revoke_current_sessions = require("./login/revoke_current_sessions");
 
 const app = express();
 

@@ -1,8 +1,6 @@
 const admin = require('firebase-admin');
-const functions = require('firebase-functions');
 
-const stripeTest = functions.config().stripe.key.test;
-//const stripeLive = functions.config().stripe.key.prod;
+const stripeTest = process.env.STRIPE
 
 var stripe = require('stripe')(stripeTest);
 const userCrud = require('../users/crud')
