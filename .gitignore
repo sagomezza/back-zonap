@@ -56,7 +56,7 @@ yarn.lock
 
 .env
 .env.prod
-.env.test
+.env.dev
 
 service_account_prod.json
 service_account_dev.json

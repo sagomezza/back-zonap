@@ -1,4 +1,4 @@
-FROM node:13.13
+FROM node:14
 
 RUN mkdir -p /var/www/zonap
 
@@ -10,6 +10,6 @@ RUN npm install
 
 COPY src .
 
-EXPOSE 3000 443 80
+EXPOSE 8000
 
-CMD ["npm", "start"] 
+CMD ["node", "src/index.js"] 

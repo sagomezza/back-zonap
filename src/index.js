@@ -120,6 +120,10 @@ const recordIdempotency = (hash, response) => {
   return "hashed";
 };
 
+app.get("/", (req, res)=>{
+  res.send("I'm okay")
+})
+
 // ---------------------- USER LOGIN ---------------------------
 app.post("/createLoginUser", (req, res) =>
   create_user(req, res)
@@ -776,6 +780,6 @@ app.post("/listNewsReports", (req, res) =>
 
 const server = require("http").createServer(app);
 
-server.listen(3000, () => {
-  console.log("Started on port 3000");
+server.listen(8000, () => {
+  console.log("Started on port 8000");
 });

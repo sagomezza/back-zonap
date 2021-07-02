@@ -10,12 +10,10 @@ const mensualityCrud = require("../users/mensualityCrud");
 const blCrud = require("./blackList");
 const stripeController = require("../payment/stripeController");
 
-console.log(process.env.AWSSECRETACCESSKEY, process.env.AWSACCESSKEY)
-
 const sns = new SNS({
   apiVersion: "2010-03-31",
-  accessKeyId: process.env.AWSSECRETACCESSKEY,
-  secretAccessKey: process.env.AWSACCESSKEY,
+  accessKeyId: process.env.AWSACCESSKEY,
+  secretAccessKey: process.env.AWSSECRETACCESSKEY,
   region: "us-east-1",
 });
 

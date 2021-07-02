@@ -1,8 +1,16 @@
 {
-  "name": "functions",
-  "description": "Cloud Functions for Firebase",
+  "name": "zonap-back",
+  "version": "0.0.1",
+  "description": "API in express",
+  "main": "src/index.js",
   "scripts": {
-    "start": "docker-compose up"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Santiago Gómez Zabala",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.4"
   },
   "dependencies": {
     "aws-sdk": "^2.798.0",
@@ -19,6 +27,11 @@
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "voucher-code-generator": "^1.1.1"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "*.json"
+    ]
   },
   "private": true
 }

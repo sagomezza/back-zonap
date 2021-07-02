@@ -54,7 +54,7 @@ package-lock.json
 
 yarn-lock.json
 
-.env
+# .env
 
 service_account_prod.json
 service_account_dev.json
