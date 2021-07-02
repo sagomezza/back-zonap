@@ -1,11 +1,6 @@
 const admin = require('firebase-admin');
 const moment = require('moment-timezone')
 moment().tz("America/Bogota").format();
-const hqCrud = require('../headquarters/crud')
-const recipManager = require("../payment/recips")
-const functions = require('firebase-functions');
-const pay = require('../payment/pay')
-const userCrud = require('../users/crud');
 
 
 outterPromise = (doc) => {

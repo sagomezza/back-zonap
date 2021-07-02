@@ -2,13 +2,12 @@
 
 const admin = require('firebase-admin');
 // const twilio = require('./twilio');
-const functions = require('firebase-functions');
 const SNS = require('aws-sdk/clients/sns');
 
 const sns = new SNS({ 
     apiVersion: '2010-03-31',
-    accessKeyId: functions.config().aws.accesskey,
-    secretAccessKey: functions.config().aws.secretaccesskey,
+    accessKeyId: process.env.AWSACCESSKEY,
+    secretAccessKey: process.env.AWSSECRETACCESSKEY,
     region: 'us-east-1',
 });
 

@@ -5,17 +5,15 @@ const moment = require("moment-timezone");
 
 const hqCrud = require("./crud");
 const recipManager = require("../payment/recips");
-const functions = require("firebase-functions");
 const pay = require("../payment/pay");
-const userCrud = require("../users/crud");
 const mensualityCrud = require("../users/mensualityCrud");
 const blCrud = require("./blackList");
 const stripeController = require("../payment/stripeController");
 
 const sns = new SNS({
   apiVersion: "2010-03-31",
-  accessKeyId: functions.config().aws.accesskey,
-  secretAccessKey: functions.config().aws.secretaccesskey,
+  accessKeyId: process.env.AWSACCESSKEY,
+  secretAccessKey: process.env.AWSSECRETACCESSKEY,
   region: "us-east-1",
 });
 
