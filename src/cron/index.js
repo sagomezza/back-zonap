@@ -1,6 +1,11 @@
 const admin = require('firebase-admin');
 const moment = require('moment-timezone')
 moment().tz("America/Bogota").format();
+const hqCrud = require('../headquarters/crud')
+const recipManager = require("../payment/recips")
+const functions = require('firebase-functions');
+const pay = require('../payment/pay')
+const userCrud = require('../users/crud');
 
 
 outterPromise = (doc) => {
@@ -87,7 +92,7 @@ dueMensualitiesOps = (doc) => {
   return new Promise(async (resolve, reject) => {
     let now = moment().tz("America/Bogota")
     let data = doc.data()
-    let dateFinished = moment(data.validity).tz("America/Bogota")
+    let dateFinished = moment(new Date (data.validity._seconds) * 1000).tz("America/Bogota").toDate()
     let diff = now.isAfter(dateFinished)
     console.log(diff)
     if (diff) {

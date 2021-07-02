@@ -1,11 +1,13 @@
 const axios =  require("axios");
 const { LEANCORE, CONNEXION, TIMEOUT } =  require('./api');
+const functions = require('firebase-functions');
+
 
 module.exports.authLeanCore = () => {
     return new Promise((resolve, reject)=> {
         axios.post(
             `${LEANCORE}${CONNEXION}`,
-            { apiKey: process.env.LEANCORE },
+            { apiKey: functions.config().leancore.key },
             { timeout: TIMEOUT }
         ).then(result => {
             let accessToken = result.data.access_token

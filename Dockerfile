@@ -12,4 +12,4 @@ COPY src .
 
 EXPOSE 8000
 
-CMD ["node", "src/index.js"] 
+CMD ["npm", "start"] 

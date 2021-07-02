@@ -94,8 +94,10 @@ module.exports.readHq = (parameter) => {
                     data.id = doc.id
                     data.occupiedCars = data.totalCars - data.availableCars
                     data.occupiedBikes = data.totalBikes - data.availableBikes
-                    data.availableCars -= data.monthlyCarUsers
-                    data.availableBikes -= data.monthlyBikeUsers
+                    if(data.monthlyAffects){
+                        data.availableCars -= data.monthlyCarUsers
+                        data.availableBikes -= data.monthlyBikeUsers
+                    }
                     if (data.reservations && data.reservations.length && data.reservations.length > 0) {
                         data.reservations.map(reserve => {
                             reserve.dateStart = reserve.dateStart.toDate()
@@ -135,8 +137,10 @@ module.exports.readHq = (parameter) => {
                         data.id = doc.id
                         data.occupiedCars = data.totalCars - data.availableCars
                         data.occupiedBikes = data.totalBikes - data.availableBikes
-                        data.availableCars -= data.monthlyCarUsers
-                        data.availableBikes -= data.monthlyBikeUsers
+                        if(data.monthlyAffects){
+                            data.availableCars -= data.monthlyCarUsers
+                            data.availableBikes -= data.monthlyBikeUsers
+                        }
                         if (data.reservations && data.reservations.length && data.reservations.length > 0) {
                             data.reservations.map(reserve => {
                                 reserve.dateStart = reserve.dateStart.toDate()

@@ -1,4 +1,6 @@
 const admin = require('firebase-admin');
+const functions = require('firebase-functions');
+
 const moment = require('moment-timezone')
 const corpoCrud = require('../corporations/crud')
 
@@ -26,7 +28,7 @@ module.exports.createAdmin = async (parameter) => {
                     await admin.auth().createUser({
                         email: parameter.email,
                         emailVerified: true,
-                        password: process.env.DEFAULTPASSWORD,
+                        password: functions.config().zonap.defaultpassword,
                         displayName: parameter.name + " " + parameter.lastName,
                         photoURL: "https://cdn0.iconfinder.com/data/icons/elasto-online-store/26/00-ELASTOFONT-STORE-READY_user-circle-512.png",
                         disabled: false,

@@ -5,15 +5,17 @@ const moment = require("moment-timezone");
 
 const hqCrud = require("./crud");
 const recipManager = require("../payment/recips");
+const functions = require("firebase-functions");
 const pay = require("../payment/pay");
+const userCrud = require("../users/crud");
 const mensualityCrud = require("../users/mensualityCrud");
 const blCrud = require("./blackList");
 const stripeController = require("../payment/stripeController");
 
 const sns = new SNS({
   apiVersion: "2010-03-31",
-  accessKeyId: process.env.AWSACCESSKEY,
-  secretAccessKey: process.env.AWSSECRETACCESSKEY,
+  accessKeyId: functions.config().aws.accesskey,
+  secretAccessKey: functions.config().aws.secretaccesskey,
   region: "us-east-1",
 });
 
@@ -63,14 +65,14 @@ module.exports.startParking = (parameter) => {
         .then(async (resultHq) => {
           try {
             if (parameter.type === "car" && resultHq.data.availableCars === 0) {
-              reject({ response: -2, message: `No more available parks` });
+              reject({ response: -3, message: `No more available car parks` });
               return;
             }
             if (
               parameter.type === "bike" &&
               resultHq.data.availableBikes === 0
             ) {
-              reject({ response: -2, message: `No more available parks` });
+              reject({ response: -4, message: `No more available bike parks` });
               return;
             }
             try {
