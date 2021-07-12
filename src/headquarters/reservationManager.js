@@ -190,7 +190,7 @@ module.exports.startParking = (parameter) => {
                   return;
                 }
               }
-              const code = Math.floor(Math.random() * 89999 + 10000);
+              const code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
                 await this.prepayFullDay(parameter)
@@ -1128,7 +1128,7 @@ module.exports.prepayFullDay = (parameter, reservation) => {
               moment(reservation.dateStart.toDate()).add(1, "day");
             else dateFinished = moment(reservation.dateStart).add(1, "day");
           } else {
-            code = Math.floor(Math.random() * 89999 + 10000);
+            code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
             const db = admin.firestore();
             let hqRef = db.collection("headquarters").doc(parameter.hqId);
             dateStart = parameter.dateStart.toDate();

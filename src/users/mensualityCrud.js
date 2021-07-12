@@ -106,7 +106,7 @@ module.exports.createMensuality = (parameter) => {
                   }
                   let response = {};
                   if (parameter.mensualityType === "corporative")
-                    parameter.code = Math.floor(Math.random() * 89999 + 10000);
+                    parameter.code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
                   parameter.plates = [...newPlates];
                   const db = admin.firestore();
                   parameter.status = "active";
