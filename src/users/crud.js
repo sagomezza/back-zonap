@@ -25,6 +25,8 @@ module.exports.createUser = async (parameter) => {
                 }
                 
                 Object.assign(parameter, {
+                    acceptanceTerms: true,
+                    acceptanceDate: moment().tz("America/Bogota").toDate(),
                     leancoreId: "",
                     stage: "full",
                     payments: {
@@ -222,11 +224,11 @@ module.exports.editUser = async (parameter) => {
             if (parameter.email) data.email = parameter.email
             if (parameter.name) data.name = parameter.name
             if (parameter.lastName) data.lastName = parameter.lastName
-            if (parameter.vehiclesInfo) data.vehiclesInfo = parameter.vehiclesInfo
             if (parameter.expoToken) data.expoToken = parameter.expoToken
             if (parameter.plate) data.plates = admin.firestore.FieldValue.arrayUnion(parameter.plate)
             if (parameter.nid) data.plate = admin.firestore.FieldValue.arrayUnion(parameter.nid)
-            if(parameter.type) data.type = parameter.type
+            if (parameter.cars) data.cars = admin.firestore.FieldValue.arrayUnion(parameter.cars)
+            if (parameter.type) data.type = parameter.type
             if (Object.values(data).length === 0) { reject({ response: -1, message: `Error: Bad parameters` }); return }
             const db = admin.firestore();
             let userRef = db.collection('users').doc(parameter.id)
@@ -320,6 +322,149 @@ module.exports.changeUserPhoneNumber = (parameter) => {
         }
     })
 }
+
+module.exports.deleteVehicle= async (parameter) => {
+    return new Promise(async (resolve, reject)=> {
+        try {
+            if (Object.values(parameter).length === 0) { reject({ response: -1, message: `Error: Empty object` }); return }
+            if (!parameter.userId) { reject({ response: -1, message: `Error:missing parameter userId` }); return }
+            if (!parameter.plate) { reject({ response: -1, message: `Error:missing parameter plate` }); return }
+            const db = admin.firestore();
+            let userRef = db.collection('users').doc(parameter.userId)
+            let query = userRef.get()
+                .then(async (doc) => {
+                    if (!doc.exists) {
+                        console.log('No such document!');
+                        reject({ response: -1, err: "No such document!" })
+                        return;
+                    }
+                    let cars = doc.data().cars
+                    let plates = doc.data().plates
+                    await userRef.update({
+                        "cars": cars.filter(car => car.plate !== parameter.plate)
+                    })
+                    await userRef.update({
+                        "plates": plates.filter(plate => plate !== parameter.plate)
+                    })
+                    resolve({ response: 1, message: `Vehicle was removed succesfully` })
+    
+                })
+                .catch(err => {
+                    console.log('Error getting documents', err);
+                    reject({ response: 0, err })
+                    return;
+                });
+    
+        } catch (err) {
+            console.log('Error deleteVehicle', err);
+            reject({ response: 0, err: JSON.stringify(err, 2) });
+            return;
+        }
+    })
+}
+
+module.exports.updateVehicle= async (parameter) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (Object.values(parameter).length === 0) { reject({ response: -1, message: `Error: Empty object` }); return }
+            if (!parameter.userId) { reject({ response: -1, message: `Error:missing parameter userId` }); return }
+            //if (!parameter.vehicleIndex) { reject({ response: -1, message: `Error:missing parameter vehiceIndex` }); return }
+            const db = admin.firestore();
+            let userRef = db.collection('users').doc(parameter.userId)
+            let query = userRef.get()
+                .then(async (doc) => {
+                    if (!doc.exists) {
+                        console.log('No such document!');
+                        reject({ response: -1, err: "No such document!" })
+                        return;
+                    }
+                    let cars = doc.data().cars
+                    let plates = doc.data().plates
+                    cars[parameter.vehicleIndex] = {plate: parameter.plate, brand: parameter.brand}
+                    plates[parameter.vehicleIndex] = parameter.plate 
+                    await userRef.update({
+                        "cars": cars,
+                        "plates": plates
+
+                    })
+                    resolve({ response: 1, message: `Vehicle was updated succesfully` })
+    
+                })
+                .catch(err => {
+                    console.log('Error getting documents', err);
+                    reject({ response: 0, err })
+                    return;
+                });
+    
+        } catch (err) {
+            console.log('Error deleteVehicle', err);
+            reject({ response: 0, err: JSON.stringify(err, 2) });
+            return;
+        }
+    })
+}
+
+module.exports.getUserRecips =  async (parameter) => {
+    return new Promise (async (resolve, reject) => {
+        try {
+            if (Object.values(parameter).length === 0) { reject({ response: -1, message: `Error: Empty object` }); return }
+            if (!parameter.phone) { reject({ response: -1, message: `Error:missing parameter phone` }); return }
+            const db = admin.firestore();
+            let recipRef = db.collection("recips");
+            recipRef
+            .where("phone", "==", parameter.phone)
+            .get()
+            .then(async (snapshot) => {
+                try {
+                    if (snapshot.empty) {
+                        reject({ response: -1, message: `Recips not found` });
+                        return;
+                      }
+                    let recips = []
+                    if (!snapshot.empty) {
+                        snapshot.forEach((doc) => {
+                            let recipData = doc.data();
+                            if (!recipData.mensuality && !recipData.prepayFullDay) {
+                                recipData.id = doc.id;
+                                recips.push(recipData);
+                            }
+                        });
+                    }
+                    resolve({
+                        response: 1,
+                        message: `Recips found`,
+                        data: recips,
+                    })
+                } catch (err) {
+                    console.log('Error getting user recips', err)
+                    reject({ response: -2, err: JSON.stringify(err, 2) });
+                    return;
+                }
+            })
+
+        } catch (err) {
+            console.log('Error getting user recips', err)
+            reject({ response: 0, err: JSON.stringify(err, 2) });
+            return;
+        }
+    })
+}
+
+
+// module.exports.getUsers = async (parameter) => {
+//     return new Promise (async (resolve, reject) => {
+//         try {
+//             const db = admin.firestore();
+//             let userRef = db.collection('users').size()
+//             console.log(userRef)
+//         } catch (err) {
+//             console.log('Error fetching recips');
+//             reject({ response: 0, err: JSON.stringify(err, 2)});
+//             return
+//         }
+//     })
+// }
+
 // module.exports.countMensualities = () => {
 //     return new Promise ((resolve, reject)=> {
 //         const db = admin.firestore();

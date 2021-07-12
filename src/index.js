@@ -243,6 +243,13 @@ app.post("/changeUserPhoneNumber", (req, res) =>
     .catch((err) => res.status(422).send(err))
 );
 
+app.post("/getUserRecips", (req, res) =>
+  userCrud
+    .getUserRecips(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 // ---------------------- OFFICIAL CRUD ---------------------------
 app.post("/createOfficial", (req, res) =>
   officialCrud
@@ -783,3 +790,19 @@ const server = require("http").createServer(app);
 server.listen(8000, () => {
   console.log("Started on port 8000");
 });
+
+
+//---------------------VEHICLES--------------------------
+app.post("/deleteVehicle", (req, res) =>
+  newsReport
+    .deleteVehicle(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/updateVehicle", (req, res) =>
+  newsReport
+    .updateVehicle(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);

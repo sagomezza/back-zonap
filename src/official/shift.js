@@ -285,7 +285,7 @@ module.exports.getShiftRecips = (parameter) => {
                   try {
                     let officialData = officialResult.data;
                     if (officialData.start) {
-                      if (officialData.schedule.status !== "active") {
+                      if (officialData.status !== "active") {
                         reject({
                           response: -3,
                           message: `The official ${parameter.email} isn't in active shift.`,
@@ -301,8 +301,8 @@ module.exports.getShiftRecips = (parameter) => {
                       const db = admin.firestore();
                       let recips = [];
                       let total = 0;
-                      console.log(moment(dateStart).tz("America/Bogota"));
-                      console.log(moment(dateEnd).tz("America/Bogota"));
+                      //console.log(dateStart);
+                      //console.log(dateEnd.toDate());
                       let recipsRef = await db
                         .collection("recips")
                         .where("dateFinished", ">=", dateStart)
@@ -318,13 +318,14 @@ module.exports.getShiftRecips = (parameter) => {
                                 let data = doc.data();
                                 if (!data.mensuality && !data.prepayFullDay) {
                                   data.id = doc.id;
+                                  //console.log(data.id)
                                   data.dateStart = data.dateStart.toDate();
                                   data.dateFinished =
                                     data.dateFinished.toDate();
                                   data.change < 0
                                     ? (total += data.cash)
                                     : (total += data.total);
-                                  recips.push(data);
+                                  recips.push(data);                
                                 }
                               });
                             }

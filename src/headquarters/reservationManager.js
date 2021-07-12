@@ -703,7 +703,9 @@ module.exports.finishParking = (parameter) => {
                   if (
                     currentReserve.prepayFullDay ||
                     currentReserve.total === 0 ||
-                    currentReserve.mensualityId
+                    currentReserve.mensualityId ||
+                    parameter.status === "pending" ||
+                    parameter.status === "partial-pending"
                   ) {
                     await finishPay(
                       parameter,

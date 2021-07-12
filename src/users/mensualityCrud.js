@@ -110,8 +110,6 @@ module.exports.createMensuality = (parameter) => {
                   parameter.plates = [...newPlates];
                   const db = admin.firestore();
                   parameter.status = "active";
-                  parameter.parkedPlates = 0;
-                  parameter.status = "active";
                   parameter.total =
                     parameter.vehicleType === "car"
                       ? hqRes.data.monthlyCarPrice
@@ -351,7 +349,7 @@ module.exports.editMensuality = (parameter) => {
       let data = {};
       if (parameter.plates) data.plates = parameter.plates;
       if (parameter.email) data.email = parameter.email;
-      if (parameter.phone) data.userPhone = parameter.userPhone;
+      if (parameter.phone) data.userPhone = parameter.phone;
       if (Object.values(data).length === 0) {
         reject({ response: -1, message: `Error: Empty object` });
         return;
@@ -478,7 +476,8 @@ module.exports.renewMensuality = (parameter) => {
               return;
             }
             if (
-              data.status === "active"
+              data.status === "active" &&
+              moment().tz("America/Bogota").date() > 5
             ) {
               resolve({ response: 2, message: `Mensuality is already active` });
               return;
