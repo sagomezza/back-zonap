@@ -15,6 +15,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
+      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -84,7 +85,7 @@ module.exports.createBlackList = (parameter) => {
             })
             .catch(async (err) => {
               try {
-                console.log(err)
+                console.log(err);
                 if (err.response && err.response === -2) {
                   parameter.recipIds = [parameter.recipId];
                   if (parameter.userPhone.startsWith("+57"))
@@ -175,12 +176,18 @@ module.exports.payDebts = (parameter) => {
         reject({ response: -1, message: `Missing data: value` });
         return;
       }
-      if (!parameter.cash) {
-        reject({ response: -1, message: `Missing data: cash` });
+      if (
+        (!parameter.change && Number(parameter.change) !== Number(0)) ||
+        parameter.change === null
+      ) {
+        reject({ response: -1, message: `Missing data: change` });
         return;
       }
-      if (!parameter.change) {
-        reject({ response: -1, message: `Missing data: change` });
+      if (
+        (!parameter.cash && Number(parameter.cash) !== Number(0)) ||
+        parameter.cash === null
+      ) {
+        reject({ response: -1, message: `Missing data: cash` });
         return;
       }
       this.readBlackList(parameter)
@@ -224,7 +231,7 @@ module.exports.payDebts = (parameter) => {
                   .doc(res.data.id)
                   .update({
                     recipIds: admin.firestore.FieldValue.arrayUnion(
-                      resRecip.id,
+                      resRecip.id
                     ),
                   });
                 const params = {
