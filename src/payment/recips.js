@@ -77,7 +77,7 @@ module.exports.getRecips = (parameter) => {
             try {
               let officialData = officialResult.data;
               if(officialData.start){
-                if (officialData.schedule.status !== "active") {
+                if (officialData.status !== "active") {
                   reject({
                     response: -3,
                     message: `The official ${parameter.email} isn't in active shift.`,
