@@ -433,7 +433,7 @@ module.exports.getUserRecips =  async (parameter) => {
                     resolve({
                         response: 1,
                         message: `Recips found`,
-                        data: recips,
+                        data: recips.reverse().slice(0,10),
                     })
                 } catch (err) {
                     console.log('Error getting user recips', err)

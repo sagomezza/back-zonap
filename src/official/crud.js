@@ -35,7 +35,7 @@ module.exports.createOfficial = async (parameter) => {
                 reject({ response: -1, message: `Missing data: nid` });
                 return;
             }
-            if (!parameter.schedule) parameter.schedule = {};
+            //if (!parameter.schedule) parameter.schedule = {};
 
             Object.assign(parameter, {
                 creationDate: admin.firestore.Timestamp.fromDate(new Date()),
