@@ -120,17 +120,21 @@ module.exports.startShift = (parameter) => {
       .readOfficial({ email: parameter.email })
       .then(async (result) => {
         try {
-          let data = {
-            start: admin.firestore.Timestamp.fromDate(
-              moment().tz("America/Bogota").toDate()
-            ),
-            end: null,
-            status: "active",
-          };
-          const db = admin.firestore();
-          let officialRef = db.collection("officials").doc(result.data.id);
-          await officialRef.update(data);
-          resolve({ response: 1, message: "Shift started" });
+          if (result.data.end !== null){
+            let data = {
+              start: admin.firestore.Timestamp.fromDate(
+                moment().tz("America/Bogota").toDate()
+              ),
+              end: null,
+              status: "active",
+            };
+            const db = admin.firestore();
+            let officialRef = db.collection("officials").doc(result.data.id);
+            await officialRef.update(data);
+            resolve({ response: 1, message: "Shift started" });
+          } else {
+            resolve({ response: 2, message: "Shift is already started"})
+          }
         } catch (err) {
           console.log(err);
           reject(err);
