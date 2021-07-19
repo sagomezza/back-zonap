@@ -269,7 +269,7 @@ module.exports.findUserByPlate = (parameter) => {
                         });
                         resolve({ response: 1, message: `User found succesfully`, data: users, blackList: blRes.data, fullData })
                     }).catch(err => {
-                        if (err.response && err.response === -1) {
+                        if (err.response && err.response === -2) {
                             let users = []
                             let fullData = []
                             snapshot.forEach(doc => {

@@ -21,6 +21,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
+      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -547,14 +548,14 @@ module.exports.checkParking = (parameter) => {
                       currentReserve.total += result.data.value;
                       resolve({
                         response: 1,
-                        message: `Recip generated`,
+                        message: `Parking data calculated`,
                         data: currentReserve,
                         recipIds: result.data.recipIds,
                       });
                     } else {
                       resolve({
                         response: 1,
-                        message: `Recip generated`,
+                        message: `Parking data calculated`,
                         data: currentReserve,
                       });
                     }
@@ -564,10 +565,10 @@ module.exports.checkParking = (parameter) => {
                   }
                 })
                 .catch((err) => {
-                  if (err.response === -1)
+                  if (err.response === -2)
                     resolve({
                       response: 1,
-                      message: `Recip generated`,
+                      message: `Parking data calculated`,
                       data: currentReserve,
                     });
                   else reject(err);
