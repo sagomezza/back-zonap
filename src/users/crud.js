@@ -20,8 +20,11 @@ module.exports.createUser = async (parameter) => {
                     delete parameter.plate
                 }
                 if (parameter.plates) {
-                    parameter.plates.map(plate => cars.push({ plate: plate, brand: parameter.brand }))
+                    let vehicle = ''
+                    parameter.vehicleType ? vehicle = parameter.vehicleType : vehicle = '';
+                    parameter.plates.map(plate => cars.push({ plate: plate, brand: parameter.brand, vehicleType: vehicle }))
                     delete parameter.brand
+                    delete parameter.vehicleType
                 }
                 
                 Object.assign(parameter, {
@@ -433,7 +436,7 @@ module.exports.getUserRecips =  async (parameter) => {
                     resolve({
                         response: 1,
                         message: `Recips found`,
-                        data: recips,
+                        data: recips.reverse().slice(0,10),
                     })
                 } catch (err) {
                     console.log('Error getting user recips', err)
