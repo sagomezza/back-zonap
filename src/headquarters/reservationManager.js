@@ -217,9 +217,7 @@ module.exports.startParking = (parameter) => {
                 await hqRef.update(data);
                 if (!parameter.isParanoic) {
                   const params = {
-                    Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"}  Ingresaste a nuestro parqueadero ${
-                      resultHq.data.name
-                    }  a las ${
+                    Message: `Tu código Zona P es: (${code}). Hora: ${
                       dateStart.hours() - 12 > 0
                         ? dateStart.hours() - 12
                         : dateStart.hours()
@@ -229,9 +227,9 @@ module.exports.startParking = (parameter) => {
                         : dateStart.minutes()
                     } ${
                       dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                    } con la placa ${
+                    } Placa: ${
                       parameter.plate
-                    } Tu código de verificación es: (${code}).  ${"\n"} Nuestro anfitrión de servicio te lo solicitará al momento de tu salida. ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
+                    }. Más información: https://bit.ly/3rQeKDM`,
                     PhoneNumber: parameter.phone,
                     MessageAttributes: {
                       "AWS.SNS.SMS.SMSType": {
@@ -950,9 +948,9 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                 };
               } else if (parameter.status !== "pending")
                 params = {
-                  Message: `Tu pago ha sido registrado exitosamente. Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                  Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                     parameter.recipId
-                  }  ${"\n"} ¡Vuelve pronto!`,
+                  }  ${"\n"}`,
                   PhoneNumber: parameter.phone,
                   MessageAttributes: {
                     "AWS.SNS.SMS.SMSType": {
@@ -963,7 +961,7 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                 };
               else if (parameter.status === "pending") {
                 params = {
-                  Message: `¡Hola! ${"\n"} Sabemos que no pudiste pagar el día de hoy tu tarifa del parqueadero, para tu próxima visita tienes un saldo pendiente por: $${
+                  Message: `¡Hola tu saldo pendiente es: $${
                     currentReserve.change * -1
                   } `,
                   PhoneNumber: parameter.phone,
@@ -1175,9 +1173,7 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                     : data.dateFinished;
                   if (!parameter.isParanoic) {
                     const params = {
-                      Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"}  Tu código de verificación es: (${code}). Nuestro anfitrión de servicio te lo solicitará al momento de tu salida. ${"\n"} Ingresaste a nuestro parqueadero ${
-                        resultHq.data.name
-                      } a las ${
+                      Message: `¡Hola! Tu código Zona P es: (${code}). Hora: ${
                         moment(data.dateStart).tz("America/Bogota").hours() -
                           12 >
                         0
@@ -1201,9 +1197,9 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                         0
                           ? "PM"
                           : "AM"
-                      } ${"\n"} Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                      }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                         resultRecip.id
-                      } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
+                      } Más información:  https://bit.ly/3rQeKDM`,
                       PhoneNumber: parameter.phone,
                       MessageAttributes: {
                         "AWS.SNS.SMS.SMSType": {
@@ -1342,9 +1338,9 @@ module.exports.qrPay = (parameter) => {
                             resolve("done")
                           })
                           let params = {
-                            Message: `Tu pago ha sido registrado exitosamente. Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                            Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                               parameter.recipId
-                            }  ${"\n"} ¡Vuelve pronto!`,
+                            }`,
                             PhoneNumber: parameter.phone,
                             MessageAttributes: {
                               "AWS.SNS.SMS.SMSType": {

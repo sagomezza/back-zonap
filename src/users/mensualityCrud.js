@@ -160,9 +160,7 @@ module.exports.createMensuality = (parameter) => {
                           .update({ mensuality: request.id });
                         let dateStart = moment().tz("America/Bogota");
                         const params = {
-                          Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"} Pagaste una mensualidad para nuestro parqueadero ${
-                            hqRes.data.name
-                          } a las ${
+                          Message: `¡Hola! Pagaste una mensualidad. Hora: ${
                             dateStart.hours() - 12 > 0
                               ? dateStart.hours() - 12
                               : dateStart.hours()
@@ -172,9 +170,9 @@ module.exports.createMensuality = (parameter) => {
                               : dateStart.minutes()
                           } ${
                             dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                          }. ${"\n"} Aquí está tu recibo: http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                          }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                             resRecip.id
-                          } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
+                          }. Más información: https://bit.ly/3rQeKDM`,
                           PhoneNumber: parameter.userPhone,
                           MessageAttributes: {
                             "AWS.SNS.SMS.SMSType": {
@@ -509,7 +507,7 @@ module.exports.renewMensuality = (parameter) => {
             recipManager.createRecip(currentReserve).then(async (resRecip) => {
               let dateStart = moment().tz("America/Bogota");
               const params = {
-                Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"} Renovaste tu mensualidad para nuestro parqueadero a las ${
+                Message: `¡Hola! Renovaste tu mensualidad. Hora: ${
                   dateStart.hours() - 12 > 0
                     ? dateStart.hours() - 12
                     : dateStart.hours()
@@ -519,9 +517,9 @@ module.exports.renewMensuality = (parameter) => {
                     : dateStart.minutes()
                 } ${
                   dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                }. ${"\n"} Aquí está tu recibo: http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                   resRecip.id
-                } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
+                }. Más información: https://bit.ly/3rQeKDM`,
                 PhoneNumber: data.userPhone,
                 MessageAttributes: {
                   "AWS.SNS.SMS.SMSType": {
