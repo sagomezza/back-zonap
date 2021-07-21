@@ -503,7 +503,7 @@ module.exports.checkParking = (parameter) => {
                       total = doc.data().hourCarPrice * Math.floor(hours);
                     if (currentReserve.type === "bike")
                       total = doc.data().hourBikePrice * Math.floor(hours);
-                    if (diff.minutes() > 5 && diff.minutes() <= 30) {
+                    if (diff.minutes() >= 0 && diff.minutes() <= 30) {
                       if (currentReserve.type === "car")
                         total += doc.data().fractionCarPrice;
                       if (currentReserve.type === "bike")
