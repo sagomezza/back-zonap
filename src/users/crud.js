@@ -20,8 +20,11 @@ module.exports.createUser = async (parameter) => {
                     delete parameter.plate
                 }
                 if (parameter.plates) {
-                    parameter.plates.map(plate => cars.push({ plate: plate, brand: parameter.brand }))
+                    let vehicle = ''
+                    parameter.vehicleType ? vehicle = parameter.vehicleType : vehicle = '';
+                    parameter.plates.map(plate => cars.push({ plate: plate, brand: parameter.brand, vehicleType: vehicle }))
                     delete parameter.brand
+                    delete parameter.vehicleType
                 }
                 
                 Object.assign(parameter, {
