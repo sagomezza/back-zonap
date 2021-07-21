@@ -49,7 +49,7 @@ module.exports = function (req, res) {
                 //     });
                 // });
                 const params = {
-                    Message: 'Tu cod. Bluspot es: ' + code,
+                    Message: 'Tu cod. Zona P es: ' + code,
                     PhoneNumber: '+' + phone,
                     MessageAttributes: {
                         'AWS.SNS.SMS.SMSType': {

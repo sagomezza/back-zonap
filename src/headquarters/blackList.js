@@ -235,7 +235,7 @@ module.exports.payDebts = (parameter) => {
                     ),
                   });
                 const params = {
-                  Message: `Pagaste tu deduda en el parquedearo de Zona P. ${"\n"} a las ${
+                  Message: `Deuda pagada a las ${
                     dateFactured.hours() - 12 > 0
                       ? dateFactured.hours() - 12
                       : dateFactured.hours()
@@ -245,7 +245,7 @@ module.exports.payDebts = (parameter) => {
                       : dateFactured.minutes()
                   } ${
                     dateFactured.hours() - 12 > 0 ? "PM" : "AM"
-                  }. ${"\n"} Aquí está tu recibo: http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                  }. ${"\n"} Recibo: https://tinyurl.com/bur82ydc?rid=${
                     resRecip.id
                   }`,
                   PhoneNumber: res.data.userPhones[0],
