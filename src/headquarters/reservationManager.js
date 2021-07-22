@@ -810,7 +810,11 @@ module.exports.finishParking = (parameter) => {
                         reject(err);
                       });
                   }
-                } catch (err) {
+                  if (currentReserve.isParanoic) {
+                    let paranoicRef = await db.collection("paranoics").doc(parameter.phone)
+                    await paranoicRef.update({plate: null})
+                  }
+                } catch (err) { 
                   console.log(err);
                   reject(err);
                 }

@@ -272,6 +272,13 @@ app.post("/editOfficial", (req, res) =>
     .catch((err) => res.status(422).send(err))
 );
 
+app.post("/changePassword", (req, res) =>
+  officialCrud
+    .changePassword(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 // ---------------------- CORPO CRUD ---------------------------
 app.post("/createCorporation", (req, res) =>
   corporationCrud
