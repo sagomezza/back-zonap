@@ -35,6 +35,7 @@ const blackListCrud = require("./headquarters/blackList");
 const boxCrud = require("./official/boxClose");
 const newsReport = require("./official/newsReport");
 const revoke_current_sessions = require("./login/revoke_current_sessions");
+const coupon = require("./promotions/coupons");
 
 const app = express();
 
@@ -82,6 +83,25 @@ admin.firestore().settings({
   ignoreUndefinedProperties: true,
 });
 
+//auth.authLeanCore()
+
+// recips.migrateRecips().then(res=> console.log(res))
+//    push.sendSMS()
+//  recips.check().then(res=> console.log(res))
+// shiftManager.migrateShift()
+// .then()
+// userCrud.usersCount()
+// userCrud.countMensualities()
+// reservationManager.migrateParkedList()
+// recips.countTransactions()
+// .then(res => console.log(res))
+
+//recips.migratePrepayFullDay().then(res=> console.log(res))
+
+// userCrud.migrateBalance()
+// .then(result => console.log(result))
+// .catch(err => console.log(err) )
+
 var task = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
@@ -120,9 +140,9 @@ const recordIdempotency = (hash, response) => {
   return "hashed";
 };
 
-app.get("/", (req, res)=>{
-  res.send("I'm okay")
-})
+app.get("/", (req, res) => {
+  res.send("I'm okay");
+});
 
 // ---------------------- USER LOGIN ---------------------------
 app.post("/createLoginUser", (req, res) =>
@@ -791,7 +811,6 @@ server.listen(8000, () => {
   console.log("Started on port 8000");
 });
 
-
 //---------------------VEHICLES--------------------------
 app.post("/deleteVehicle", (req, res) =>
   newsReport
@@ -806,3 +825,32 @@ app.post("/updateVehicle", (req, res) =>
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+
+//---------------------COUPONS--------------------------
+app.post("/createCoupon", (req, res) =>
+  coupon
+    .createCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+app.post("/claimCoupon", (req, res) =>
+  coupon
+    .claimCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+app.post("/checkCoupon", (req, res) =>
+  coupon
+    .checkCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/deleteCoupon", (req, res) =>
+coupon
+    .deleteCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+console.log(parseFloat('10%') / 100.0);
