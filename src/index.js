@@ -35,6 +35,7 @@ const blackListCrud = require("./headquarters/blackList");
 const boxCrud = require("./official/boxClose");
 const newsReport = require("./official/newsReport");
 const revoke_current_sessions = require("./login/revoke_current_sessions");
+const coupon = require("./promotions/coupons");
 
 const app = express();
 
@@ -82,6 +83,25 @@ admin.firestore().settings({
   ignoreUndefinedProperties: true,
 });
 
+//auth.authLeanCore()
+
+// recips.migrateRecips().then(res=> console.log(res))
+//    push.sendSMS()
+//  recips.check().then(res=> console.log(res))
+// shiftManager.migrateShift()
+// .then()
+// userCrud.usersCount()
+// userCrud.countMensualities()
+// reservationManager.migrateParkedList()
+// recips.countTransactions()
+// .then(res => console.log(res))
+
+//recips.migratePrepayFullDay().then(res=> console.log(res))
+
+// userCrud.migrateBalance()
+// .then(result => console.log(result))
+// .catch(err => console.log(err) )
+
 var task = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
@@ -120,43 +140,25 @@ const recordIdempotency = (hash, response) => {
   return "hashed";
 };
 
-app.get("/", (req, res)=>{
-  res.send("I'm okay")
-})
+app.get("/", (req, res) => {
+  res.send("I'm okay");
+});
 
 // ---------------------- USER LOGIN ---------------------------
 app.post("/createLoginUser", (req, res) =>
-  create_user(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  create_user.create_user(req, res)
 );
 
 app.post("/requestOneTimePassword", (req, res) =>
-  requestOneTimePassword(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  requestOneTimePassword.request_one_time_password(req, res)
 );
 
 app.post("/verifyOneTimePassword", (req, res) =>
-  verifyOneTimePassword(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  verifyOneTimePassword.verify_one_time_password(req, res)
 );
 
 app.post("/revoke_current_sessions", (req, res) =>
-  revoke_current_sessions(req.body, res)
+  revoke_current_sessions.revoke_current_sessions(req.body, res)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
@@ -187,6 +189,16 @@ app.post("/editAdmin", (req, res) =>
 app.post("/createUser", (req, res) =>
   userCrud
     .createUser(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => {
+      console.log(err);
+      res.status(422).send(err);
+    })
+);
+
+app.post("/bulkCreateUser", (req, res) =>
+  userCrud
+    .bulkCreateUser(req.body)
     .then((result) => res.send(result))
     .catch((err) => {
       console.log(err);
@@ -791,7 +803,6 @@ server.listen(8000, () => {
   console.log("Started on port 8000");
 });
 
-
 //---------------------VEHICLES--------------------------
 app.post("/deleteVehicle", (req, res) =>
   newsReport
@@ -806,3 +817,32 @@ app.post("/updateVehicle", (req, res) =>
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+
+//---------------------COUPONS--------------------------
+app.post("/createCoupon", (req, res) =>
+  coupon
+    .createCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+app.post("/claimCoupon", (req, res) =>
+  coupon
+    .claimCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+app.post("/checkCoupon", (req, res) =>
+  coupon
+    .checkCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/deleteCoupon", (req, res) =>
+coupon
+    .deleteCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+console.log(parseFloat('10%') / 100.0);

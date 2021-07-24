@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 
-module.exports = function (req, res) {
+module.exports.create_user = function (req, res) {
   // Verify the user provided a phone
   if (!req.body.phone) {
     return res.status(422).send({ error: 'Bad Input' });
