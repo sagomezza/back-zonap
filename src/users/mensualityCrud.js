@@ -141,15 +141,21 @@ module.exports.createMensuality = (parameter) => {
                             : hqRes.data.monthlyBikePrice;
                         if (coupon) {
                           if (parameter.vehicleType === "car") {
-                            total = Math.ceil(
-                              (total * parseFloat(coupon.value.car.month)) /
-                                100.0
-                            );
+                            total =
+                              total -
+                              Math.ceil(
+                                total *
+                                  (1 -
+                                    parseFloat(coupon.value.car.month) / 100.0)
+                              );
                           } else {
-                            total = Math.ceil(
-                              (total * parseFloat(coupon.value.bike.month)) /
-                                100.0
-                            );
+                            total =
+                              total -
+                              Math.ceil(
+                                total *
+                                  (1 -
+                                    parseFloat(coupon.value.bike.month) / 100.0)
+                              );
                           }
                         }
                         parameter.total = total;
@@ -544,14 +550,18 @@ module.exports.renewMensuality = (parameter) => {
                   if (parameter.vehicleType === "car") {
                     total =
                       total -
-                      Math.floor(
-                        (total * parseFloat(coupon.value.car.month)) / 100.0
+                      Math.ceil(
+                        total *
+                          (1 -
+                            parseFloat(coupon.value.car.month) / 100.0)
                       );
                   } else {
                     total =
                       total -
-                      Math.floor(
-                        (total * parseFloat(coupon.value.bike.month)) / 100.0
+                      Math.ceil(
+                        total *
+                          (1 -
+                            parseFloat(coupon.value.bike.month) / 100.0)
                       );
                   }
                 }
