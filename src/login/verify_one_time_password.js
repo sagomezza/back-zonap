@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 
-module.exports = function (req, res) {
+module.exports.verify_one_time_password = function (req, res) {
   if (!req.body.phone || !req.body.code) {
     return res.status(422).send({ error: 'Phone and code must be provided' });
   }

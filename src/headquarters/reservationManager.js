@@ -9,6 +9,7 @@ const pay = require("../payment/pay");
 const mensualityCrud = require("../users/mensualityCrud");
 const blCrud = require("./blackList");
 const stripeController = require("../payment/stripeController");
+const coupons = require("../promotions/coupons");
 
 const sns = new SNS({
   apiVersion: "2010-03-31",
@@ -21,7 +22,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -172,7 +173,7 @@ module.exports.startParking = (parameter) => {
                     return reserve.plate !== parameter.plate;
                   });
                   saved.phone = parameter.phone;
-                  saved.dateStart = new Date()
+                  saved.dateStart = new Date();
                   let update = {
                     prepaySave: filtered,
                     reservations: admin.firestore.FieldValue.arrayUnion(saved),
@@ -191,7 +192,12 @@ module.exports.startParking = (parameter) => {
                   return;
                 }
               }
-              const code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
+              const code = Number(
+                String(Math.floor(Math.random() * new Date().getTime())).substr(
+                  0,
+                  5
+                )
+              );
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
                 await this.prepayFullDay(parameter)
@@ -217,9 +223,7 @@ module.exports.startParking = (parameter) => {
                 await hqRef.update(data);
                 if (!parameter.isParanoic) {
                   const params = {
-                    Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"}  Ingresaste a nuestro parqueadero ${
-                      resultHq.data.name
-                    }  a las ${
+                    Message: `Tu código Zona P es: (${code}). Hora: ${
                       dateStart.hours() - 12 > 0
                         ? dateStart.hours() - 12
                         : dateStart.hours()
@@ -227,11 +231,9 @@ module.exports.startParking = (parameter) => {
                       dateStart.minutes() < 10
                         ? "0" + dateStart.minutes()
                         : dateStart.minutes()
-                    } ${
-                      dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                    } con la placa ${
+                    } ${dateStart.hours() - 12 > 0 ? "PM" : "AM"} Placa: ${
                       parameter.plate
-                    } Tu código de verificación es: (${code}).  ${"\n"} Nuestro anfitrión de servicio te lo solicitará al momento de tu salida. ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
+                    }. Más información: https://bit.ly/3rQeKDM`,
                     PhoneNumber: parameter.phone,
                     MessageAttributes: {
                       "AWS.SNS.SMS.SMSType": {
@@ -431,7 +433,6 @@ module.exports.checkParking = (parameter) => {
               let dateStart = moment(currentReserve.dateStart.toDate()).tz(
                 "America/Bogota"
               );
-              currentReserve.totalTime = moment(dateFinished.diff(dateStart));
               let diff = moment.duration(dateFinished.diff(dateStart));
               let hours = diff.asHours();
               let minutes = diff.asMinutes();
@@ -531,47 +532,76 @@ module.exports.checkParking = (parameter) => {
                   }
                 }
               }
-              currentReserve.total = total;
-              currentReserve.hours = hours;
-              currentReserve.officialEmail = parameter.officialEmail;
-              currentReserve.dateStart = currentReserve.dateStart.toDate();
-              blCrud
-                .readBlackList({
-                  hqId: parameter.hqId,
-                  plate: currentReserve.plate,
+              coupons
+                .getUserCoupons({
+                  phone: parameter.phone,
+                  promotionType: "discount",
                 })
-                .then((result) => {
-                  try {
-                    if (result.response === 1) {
-                      currentReserve.pendingValue = result.data.value;
-                      currentReserve.valuePark = total;
-                      currentReserve.total += result.data.value;
-                      resolve({
-                        response: 1,
-                        message: `Parking data calculated`,
-                        data: currentReserve,
-                        recipIds: result.data.recipIds,
-                      });
-                    } else {
-                      resolve({
-                        response: 1,
-                        message: `Parking data calculated`,
-                        data: currentReserve,
-                      });
-                    }
-                  } catch (err) {
-                    console.log(err);
-                    reject(err);
+                .then((coupons) => {
+                  let coupon;
+                  console.log(coupons);
+                  if (coupons.response === 1) {
+                    coupon = coupons.coupons.find(
+                      (coupon) =>
+                        coupon.hqId === parameter.hqId && coupon.isValid
+                    );
                   }
+                  if (coupon) {
+                    if (currentReserve.type === "car")
+                      currentReserve.total = total -  Math.ceil(
+                        (total * parseFloat(coupon.value.car.hours) / 100.0)
+                      );
+                    else
+                      currentReserve.total = total -  Math.ceil(
+                        (total * parseFloat(coupon.value.bike.hours) / 100.0)
+                      );
+                  } else currentReserve.total = total;
+
+                  currentReserve.hours = hours;
+                  currentReserve.officialEmail = parameter.officialEmail;
+                  currentReserve.dateStart = currentReserve.dateStart.toDate();
+                  blCrud
+                    .readBlackList({
+                      hqId: parameter.hqId,
+                      plate: currentReserve.plate,
+                    })
+                    .then((result) => {
+                      try {
+                        if (result.response === 1) {
+                          currentReserve.pendingValue = result.data.value;
+                          currentReserve.valuePark = total;
+                          currentReserve.total += result.data.value;
+                          resolve({
+                            response: 1,
+                            message: `Parking data calculated`,
+                            data: currentReserve,
+                            recipIds: result.data.recipIds,
+                          });
+                        } else {
+                          resolve({
+                            response: 1,
+                            message: `Parking data calculated`,
+                            data: currentReserve,
+                          });
+                        }
+                      } catch (err) {
+                        console.log(err);
+                        reject(err);
+                      }
+                    })
+                    .catch((err) => {
+                      if (err.response === -2)
+                        resolve({
+                          response: 1,
+                          message: `Parking data calculated`,
+                          data: currentReserve,
+                        });
+                      else reject(err);
+                    });
                 })
                 .catch((err) => {
-                  if (err.response === -2)
-                    resolve({
-                      response: 1,
-                      message: `Parking data calculated`,
-                      data: currentReserve,
-                    });
-                  else reject(err);
+                  console.log(err);
+                  reject(err);
                 });
             } else {
               if (parameter.verificationCode) {
@@ -954,9 +984,9 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                 };
               } else if (parameter.status !== "pending")
                 params = {
-                  Message: `Tu pago ha sido registrado exitosamente. Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
+                  Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${
                     parameter.recipId
-                  }  ${"\n"} ¡Vuelve pronto!`,
+                  }  ${"\n"}`,
                   PhoneNumber: parameter.phone,
                   MessageAttributes: {
                     "AWS.SNS.SMS.SMSType": {
@@ -967,7 +997,7 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                 };
               else if (parameter.status === "pending") {
                 params = {
-                  Message: `¡Hola! ${"\n"} Sabemos que no pudiste pagar el día de hoy tu tarifa del parqueadero, para tu próxima visita tienes un saldo pendiente por: $${
+                  Message: `¡Hola tu saldo pendiente es: $${
                     currentReserve.change * -1
                   } `,
                   PhoneNumber: parameter.phone,
@@ -1002,13 +1032,6 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                     )
                       recipData.dateFinished = recipData.dateFinished.toDate();
                     else recipData.dateFinished = recipData.dateFinished;
-                    if (
-                      recipData &&
-                      recipData.totalTime &&
-                      recipData.dateStart.totalTime
-                    )
-                      recipData.totalTime = recipData.totalTime.toDate();
-                    else recipData.totalTime = recipData.totalTime;
                   }
                   resolve({
                     response: 1,
@@ -1043,13 +1066,6 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                 )
                   recipData.dateFinished = recipData.dateFinished.toDate();
                 else recipData.dateFinished = recipData.dateFinished;
-                if (
-                  recipData &&
-                  recipData.totalTime &&
-                  recipData.dateStart.totalTime
-                )
-                  recipData.totalTime = recipData.totalTime.toDate();
-                else recipData.totalTime = recipData.totalTime;
               }
               resolve({
                 response: 1,
@@ -1104,140 +1120,179 @@ module.exports.prepayFullDay = (parameter, reservation) => {
           let dateStart;
           let currentReserve = {};
           let dateFinished = "";
-          if (reservation && reservation.plate) {
-            code = reservation.verificationCode;
-            dateStart = reservation.dateStart;
-            currentReserve = {
-              hqId: parameter.hqId,
-              plate: reservation.plate,
-              phone: reservation.phone,
-              type: reservation.type,
-              dateStart: reservation.dateStart,
-              dateFactured: moment().tz("Amareica/Bogota").toDate(),
-              verificationCode: code,
-              status: "read",
-              total:
-                reservation.type === "car"
-                  ? resultHq.data.dailyCarPrice
-                  : resultHq.data.dailyBikePrice,
-              hours: 24,
-              officialEmail: parameter.officialEmail,
-              prepayFullDay: true,
-            };
-            if (typeof reservation.dateStart === "string")
-              dateFinished = moment(new Date(reservation.dateStart)).add(
-                1,
-                "day"
-              );
-            else if (reservation.dateStart.nanoseconds)
-              moment(reservation.dateStart.toDate()).add(1, "day");
-            else dateFinished = moment(reservation.dateStart).add(1, "day");
-          } else {
-            code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
-            const db = admin.firestore();
-            let hqRef = db.collection("headquarters").doc(parameter.hqId);
-            dateStart = parameter.dateStart.toDate();
-            let data = {
-              reservations: admin.firestore.FieldValue.arrayUnion(parameter),
-            };
-            dateFinished = moment(new Date(dateStart)).add(1, "day");
-            if (parameter.type === "car")
-              data.availableCars = admin.firestore.FieldValue.increment(-1);
-            else data.availableBikes = admin.firestore.FieldValue.increment(-1);
-            await hqRef.update(data);
-            currentReserve = {
-              hqId: parameter.hqId,
-              plate: parameter.plate,
+          coupons
+            .getUserCoupons({
               phone: parameter.phone,
-              type: parameter.type,
-              dateStart: parameter.dateStart,
-              dateFactured: moment().tz("Amareica/Bogota").toDate(),
-              verificationCode: code,
-              status: "read",
-              total:
+              promotionType: "discount",
+            })
+            .then(async (coupons) => {
+              let coupon;
+              if (coupons.response === 1) {
+                coupon = coupons.coupons.find(
+                  (coupon) => coupon.hqId === parameter.hqId && coupon.isValid
+                );
+              }
+              console.log(coupon);
+              let total =
                 parameter.type === "car"
                   ? resultHq.data.dailyCarPrice
-                  : resultHq.data.dailyBikePrice,
-              hours: 24,
-              officialEmail: parameter.officialEmail,
-              prepayFullDay: true,
-            };
-          }
-          currentReserve.dateFinished = dateFinished;
-          recipManager
-            .createRecip(currentReserve)
-            .then((resultRecip) => {
+                  : resultHq.data.dailyBikePrice;
+              if (coupon) {
+                if (parameter.vehicleType === "car") {
+                  total = total - Math.ceil(
+                    (total * parseFloat(coupon.value.car.day) / 100.0)
+                  );
+                } else {
+                  total = total - Math.ceil(
+                    (total * parseFloat(coupon.value.bike.day) / 100.0)
+                  );
+                }
+              }
+              if (reservation && reservation.plate) {
+                code = reservation.verificationCode;
+                dateStart = reservation.dateStart;
+                currentReserve = {
+                  hqId: parameter.hqId,
+                  plate: reservation.plate,
+                  phone: reservation.phone,
+                  type: reservation.type,
+                  dateStart: reservation.dateStart,
+                  dateFactured: moment().tz("Amareica/Bogota").toDate(),
+                  verificationCode: code,
+                  status: "read",
+                  total: total,
+                  hours: 24,
+                  officialEmail: parameter.officialEmail,
+                  prepayFullDay: true,
+                };
+                if (typeof reservation.dateStart === "string")
+                  dateFinished = moment(new Date(reservation.dateStart)).add(
+                    1,
+                    "day"
+                  );
+                else if (reservation.dateStart.nanoseconds)
+                  moment(reservation.dateStart.toDate()).add(1, "day");
+                else dateFinished = moment(reservation.dateStart).add(1, "day");
+              } else {
+                code = Number(
+                  String(
+                    Math.floor(Math.random() * new Date().getTime())
+                  ).substr(0, 5)
+                );
+                const db = admin.firestore();
+                let hqRef = db.collection("headquarters").doc(parameter.hqId);
+                dateStart = parameter.dateStart.toDate();
+                let data = {
+                  reservations:
+                    admin.firestore.FieldValue.arrayUnion(parameter),
+                };
+                dateFinished = moment(new Date(dateStart)).add(1, "day");
+                if (parameter.type === "car")
+                  data.availableCars = admin.firestore.FieldValue.increment(-1);
+                else
+                  data.availableBikes =
+                    admin.firestore.FieldValue.increment(-1);
+                await hqRef.update(data);
+                currentReserve = {
+                  hqId: parameter.hqId,
+                  plate: parameter.plate,
+                  phone: parameter.phone,
+                  type: parameter.type,
+                  dateStart: parameter.dateStart,
+                  dateFactured: moment().tz("Amareica/Bogota").toDate(),
+                  verificationCode: code,
+                  status: "read",
+                  total: total,
+                  hours: 24,
+                  officialEmail: parameter.officialEmail,
+                  prepayFullDay: true,
+                };
+              }
+              currentReserve.dateFinished = dateFinished;
               recipManager
-                .readRecip({ recipId: resultRecip.id })
-                .then(async (recipCreated) => {
-                  let data = recipCreated.data;
-                  data.dateStart = data.dateStart.nanoseconds
-                    ? data.dateStart.toDate()
-                    : data.dateStart;
-                  data.dateFinished = data.dateFinished.nanoseconds
-                    ? data.dateFinished.toDate()
-                    : data.dateFinished;
-                  if (!parameter.isParanoic) {
-                    const params = {
-                      Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"}  Tu código de verificación es: (${code}). Nuestro anfitrión de servicio te lo solicitará al momento de tu salida. ${"\n"} Ingresaste a nuestro parqueadero ${
-                        resultHq.data.name
-                      } a las ${
-                        moment(data.dateStart).tz("America/Bogota").hours() -
-                          12 >
-                        0
-                          ? moment(data.dateStart)
-                              .tz("America/Bogota")
-                              .hours() - 12
-                          : moment(data.dateStart).tz("America/Bogota").hours()
-                      }:${
-                        moment(data.dateStart).tz("America/Bogota").minutes() <
-                        10
-                          ? "0" +
+                .createRecip(currentReserve)
+                .then((resultRecip) => {
+                  recipManager
+                    .readRecip({ recipId: resultRecip.id })
+                    .then(async (recipCreated) => {
+                      let data = recipCreated.data;
+                      data.dateStart = data.dateStart.nanoseconds
+                        ? data.dateStart.toDate()
+                        : data.dateStart;
+                      data.dateFinished = data.dateFinished.nanoseconds
+                        ? data.dateFinished.toDate()
+                        : data.dateFinished;
+                      if (!parameter.isParanoic) {
+                        const params = {
+                          Message: `¡Hola! Tu código Zona P es: (${code}). Hora: ${
                             moment(data.dateStart)
                               .tz("America/Bogota")
-                              .minutes()
-                          : moment(data.dateStart)
+                              .hours() -
+                              12 >
+                            0
+                              ? moment(data.dateStart)
+                                  .tz("America/Bogota")
+                                  .hours() - 12
+                              : moment(data.dateStart)
+                                  .tz("America/Bogota")
+                                  .hours()
+                          }:${
+                            moment(data.dateStart)
                               .tz("America/Bogota")
-                              .minutes()
-                      } ${
-                        moment(data.dateStart).tz("America/Bogota").hours() -
-                          12 >
-                        0
-                          ? "PM"
-                          : "AM"
-                      } ${"\n"} Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
-                        resultRecip.id
-                      } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
-                      PhoneNumber: parameter.phone,
-                      MessageAttributes: {
-                        "AWS.SNS.SMS.SMSType": {
-                          DataType: "String",
-                          StringValue: "Transactional",
-                        },
-                      },
-                    };
-                    sns.publish(params, (err, data) => {
-                      if (err) {
-                        console.log("publish[ERR] ", err, err.stack);
-                        return reject(err);
+                              .minutes() < 10
+                              ? "0" +
+                                moment(data.dateStart)
+                                  .tz("America/Bogota")
+                                  .minutes()
+                              : moment(data.dateStart)
+                                  .tz("America/Bogota")
+                                  .minutes()
+                          } ${
+                            moment(data.dateStart)
+                              .tz("America/Bogota")
+                              .hours() -
+                              12 >
+                            0
+                              ? "PM"
+                              : "AM"
+                          }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
+                            resultRecip.id
+                          } Más información: https://bit.ly/3rQeKDM`,
+                          PhoneNumber: parameter.phone,
+                          MessageAttributes: {
+                            "AWS.SNS.SMS.SMSType": {
+                              DataType: "String",
+                              StringValue: "Transactional",
+                            },
+                          },
+                        };
+                        sns.publish(params, (err, data) => {
+                          if (err) {
+                            console.log("publish[ERR] ", err, err.stack);
+                            return reject(err);
+                          }
+                          console.log("publish[data] ", data);
+                          resolve({
+                            response: 1,
+                            message: `The user ${parameter.plate} started succesfully the parking time`,
+                          });
+                        });
+                      } else {
+                        const db = admin.firestore();
+                        let paranoicRef = db
+                          .collection("paranoics")
+                          .doc(parameter.phone);
+                        await paranoicRef.update({ plate: parameter.plate });
+                        resolve({
+                          response: 1,
+                          message: `The user ${parameter.plate} started succesfully the parking time`,
+                        });
                       }
-                      console.log("publish[data] ", data);
-                      resolve({
-                        response: 1,
-                        message: `The user ${parameter.plate} started succesfully the parking time`,
-                      });
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      reject(err);
                     });
-                  } else {
-                    const db = admin.firestore();
-                    let paranoicRef = db
-                      .collection("paranoics")
-                      .doc(parameter.phone);
-                    await paranoicRef.update({ plate: parameter.plate });
-                    resolve({
-                      response: 1,
-                      message: `The user ${parameter.plate} started succesfully the parking time`,
-                    });
-                  }
                 })
                 .catch((err) => {
                   console.log(err);
@@ -1317,8 +1372,8 @@ module.exports.qrPay = (parameter) => {
               }
               parameter.officialEmail = snapshot.docs[0].data().email;
               parameter.paymentType = "cc";
-              parameter.plate = reservation.plate
-              console.log(parameter)
+              parameter.plate = reservation.plate;
+              console.log(parameter);
 
               stripeController
                 .chargeStripeUser({
@@ -1328,27 +1383,28 @@ module.exports.qrPay = (parameter) => {
                 .then((resultPay) => {
                   this.checkParking(parameter)
                     .then((currentReserve) => {
-                      let recipData = currentReserve.data
-                      recipData.cash = 0
-                      recipData.change = 0
-                      recipData.phone = parameter.phone
-                      recipData.total = parameter.total
-                      recipData.dateFinished = moment().tz("America/Bogota")
+                      let recipData = currentReserve.data;
+                      recipData.cash = 0;
+                      recipData.change = 0;
+                      recipData.phone = parameter.phone;
+                      recipData.total = parameter.total;
+                      recipData.dateFinished = moment().tz("America/Bogota");
                       recipManager
                         .createRecip(recipData)
                         .then(async (res) => {
                           let filteredReservations = hqData.reservations.filter(
                             (reserve) => reserve.phone !== parameter.phone
                           );
-                          console.log(filteredReservations)
-                          await new Promise(async (resolve, reject)=> {
-                            await db.collection("headquarters").doc(parameter.hqId).update({reservations: filteredReservations})
-                            resolve("done")
-                          })
+                          console.log(filteredReservations);
+                          await new Promise(async (resolve, reject) => {
+                            await db
+                              .collection("headquarters")
+                              .doc(parameter.hqId)
+                              .update({ reservations: filteredReservations });
+                            resolve("done");
+                          });
                           let params = {
-                            Message: `Tu pago ha sido registrado exitosamente. Encuentra tu recibo ingresando en el siguiente enlace. Gracias por visitarnos. http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
-                              parameter.recipId
-                            }  ${"\n"} ¡Vuelve pronto!`,
+                            Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${parameter.recipId}`,
                             PhoneNumber: parameter.phone,
                             MessageAttributes: {
                               "AWS.SNS.SMS.SMSType": {
@@ -1363,10 +1419,13 @@ module.exports.qrPay = (parameter) => {
                               return reject(err);
                             }
                             console.log("publish[data] ", data);
-                            resolve(res)
+                            resolve(res);
                           });
                         })
-                        .catch((err) => {console.log("checkParking");reject(err)});
+                        .catch((err) => {
+                          console.log("checkParking");
+                          reject(err);
+                        });
                     })
                     .catch((err) => console.log(err));
                 })

@@ -4,6 +4,7 @@ const hqCrud = require("../headquarters/crud");
 const recipManager = require("../payment/recips");
 const SNS = require("aws-sdk/clients/sns");
 const moment = require("moment-timezone");
+const coupons = require("../promotions/coupons");
 
 const sns = new SNS({
   apiVersion: "2010-03-31",
@@ -16,7 +17,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -107,91 +108,129 @@ module.exports.createMensuality = (parameter) => {
                   }
                   let response = {};
                   if (parameter.mensualityType === "corporative")
-                    parameter.code = Number(String(Math.floor(Math.random() * new Date().getTime())).substr(0,5));
+                    parameter.code = Number(
+                      String(
+                        Math.floor(Math.random() * new Date().getTime())
+                      ).substr(0, 5)
+                    );
                   parameter.plates = [...newPlates];
                   const db = admin.firestore();
                   parameter.status = "active";
-                  parameter.total =
-                    parameter.vehicleType === "car"
-                      ? hqRes.data.monthlyCarPrice
-                      : hqRes.data.monthlyBikePrice;
-                  parameter.validity = admin.firestore.Timestamp.fromDate(
-                    validity
-                  );
+                  parameter.validity =
+                    admin.firestore.Timestamp.fromDate(validity);
                   if (parameter.generateRecip) {
                     console.log("Generate recip");
                     delete parameter.generateRecip;
                     delete parameter.pending;
-                    let currentReserve = {
-                      hqId: parameter.hqId,
-                      plate: parameter.plates,
-                      phone: parameter.userPhone,
-                      total: parameter.total,
-                      officialEmail: parameter.officialEmail,
-                      dateStart: moment().tz("America/Bogota").toDate(),
-                      mensuality: true,
-                      dateFinished: parameter.validity,
-                      hours: "1 month",
-                      type: parameter.vehicleType,
-                      cash: parameter.cash,
-                      change: parameter.change,
-                    };
-                    recipManager
-                      .createRecip(currentReserve)
-                      .then(async (resRecip) => {
-                        delete parameter.cash;
-                        delete parameter.change;
-                        parameter.recipId = resRecip.id;
-                        parameter.parkedPlatesList = []
-                        var request = await db
-                          .collection("mensualities")
-                          .add(parameter);
-                        if (existing.length > 0) {
-                          response.response = 2;
-                          response.message = `Mensuality created succesfully, but there are some plates that already existed in other mensuality for this HQ`;
-                          response.existinPlates = existing;
-                        } else {
-                          response.response = 1;
-                          response.message = `Mensuality created succesfully`;
+                    coupons
+                      .getUserCoupons({
+                        phone: parameter.userPhone,
+                        promotionType: "discount",
+                      })
+                      .then((coupons) => {
+                        let coupon;
+                        if (coupons.response === 1) {
+                          coupon = coupons.coupons.find(
+                            (coupon) =>
+                              coupon.hqId === parameter.hqId && coupon.isValid
+                          );
                         }
-                        await db
-                          .collection("users")
-                          .doc(parameter.userId)
-                          .update({ mensuality: request.id });
-                        let dateStart = moment().tz("America/Bogota");
-                        const params = {
-                          Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"} Pagaste una mensualidad para nuestro parqueadero ${
-                            hqRes.data.name
-                          } a las ${
-                            dateStart.hours() - 12 > 0
-                              ? dateStart.hours() - 12
-                              : dateStart.hours()
-                          }:${
-                            dateStart.minutes() < 10
-                              ? "0" + dateStart.minutes()
-                              : dateStart.minutes()
-                          } ${
-                            dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                          }. ${"\n"} Aquí está tu recibo: http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
-                            resRecip.id
-                          } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
-                          PhoneNumber: parameter.userPhone,
-                          MessageAttributes: {
-                            "AWS.SNS.SMS.SMSType": {
-                              DataType: "String",
-                              StringValue: "Transactional",
-                            },
-                          },
-                        };
-                        sns.publish(params, (err, data) => {
-                          if (err) {
-                            console.log("publish[ERR] ", err, err.stack);
-                            return reject(err);
+                        let total =
+                          parameter.vehicleType === "car"
+                            ? hqRes.data.monthlyCarPrice
+                            : hqRes.data.monthlyBikePrice;
+                        if (coupon) {
+                          if (parameter.vehicleType === "car") {
+                            total =
+                              total -
+                              Math.ceil(
+                                (total * parseFloat(coupon.value.car.month) /
+                                  100.0)
+                              );
+                          } else {
+                            total =
+                              total -
+                              Math.ceil(
+                                (total * parseFloat(coupon.value.bike.month) /
+                                  100.0)
+                              );
                           }
-                          console.log("publish[data] ", data);
-                          response.id = request.id;
-                          resolve(response);
-                        });
+                        }
+                        parameter.total = total;
+                        let currentReserve = {
+                          hqId: parameter.hqId,
+                          plate: parameter.plates,
+                          phone: parameter.userPhone,
+                          total: parameter.total,
+                          officialEmail: parameter.officialEmail,
+                          dateStart: moment().tz("America/Bogota").toDate(),
+                          mensuality: true,
+                          dateFinished: parameter.validity,
+                          hours: "1 month",
+                          type: parameter.vehicleType,
+                          cash: parameter.cash,
+                          change: parameter.change,
+                        };
+                        console.log(currentReserve);
+                        recipManager
+                          .createRecip(currentReserve)
+                          .then(async (resRecip) => {
+                            delete parameter.cash;
+                            delete parameter.change;
+                            parameter.recipId = resRecip.id;
+                            parameter.parkedPlatesList = [];
+                            var request = await db
+                              .collection("mensualities")
+                              .add(parameter);
+                            if (existing.length > 0) {
+                              response.response = 2;
+                              response.message = `Mensuality created succesfully, but there are some plates that already existed in other mensuality for this HQ`;
+                              response.existinPlates = existing;
+                            } else {
+                              response.response = 1;
+                              response.message = `Mensuality created succesfully`;
+                            }
+                            await db
+                              .collection("users")
+                              .doc(parameter.userId)
+                              .update({ mensuality: request.id });
+                            let dateStart = moment().tz("America/Bogota");
+                            const params = {
+                              Message: `¡Hola! Pagaste una mensualidad. Hora: ${
+                                dateStart.hours() - 12 > 0
+                                  ? dateStart.hours() - 12
+                                  : dateStart.hours()
+                              }:${
+                                dateStart.minutes() < 10
+                                  ? "0" + dateStart.minutes()
+                                  : dateStart.minutes()
+                              } ${
+                                dateStart.hours() - 12 > 0 ? "PM" : "AM"
+                              }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
+                                resRecip.id
+                              }. Más información: https://bit.ly/3rQeKDM`,
+                              PhoneNumber: parameter.userPhone,
+                              MessageAttributes: {
+                                "AWS.SNS.SMS.SMSType": {
+                                  DataType: "String",
+                                  StringValue: "Transactional",
+                                },
+                              },
+                            };
+                            sns.publish(params, (err, data) => {
+                              if (err) {
+                                console.log("publish[ERR] ", err, err.stack);
+                                return reject(err);
+                              }
+                              console.log("publish[data] ", data);
+                              response.id = request.id;
+                              resolve(response);
+                            });
+                          })
+                          .catch((err) => {
+                            console.log(err);
+                            reject(err);
+                          });
                       })
                       .catch((err) => {
                         console.log(err);
@@ -208,7 +247,7 @@ module.exports.createMensuality = (parameter) => {
                       parameter.status = "pending";
                     }
                     delete parameter.pending;
-                    parameter.parkedPlatesList = []
+                    parameter.parkedPlatesList = [];
                     let request = await db
                       .collection("mensualities")
                       .add(parameter);
@@ -447,7 +486,7 @@ module.exports.renewMensuality = (parameter) => {
       console.log(parameter);
       console.log("[renewMensuality]:");
       console.log(parameter.plate);
-      let hqData = await hqCrud.readHq({id: parameter.hqId});
+      let hqData = await hqCrud.readHq({ id: parameter.hqId });
       this.findMensualityPlate(parameter)
         .then(async (res) => {
           try {
@@ -489,56 +528,91 @@ module.exports.renewMensuality = (parameter) => {
               .collection("mensualities")
               .doc(data.id)
               .update({ validity, status: "active" });
-            let currentReserve = {
-              hqId: data.hqId,
-              plate: data.plates,
-              phone: data.userPhone,
-              total:
-                data.vehicleType === "car"
-                  ? hqData.data.monthlyCarPrice
-                  : hqData.data.monthlyBikePrice,
-              officialEmail: parameter.officialEmail,
-              dateStart: moment().tz("America/Bogota").toDate(),
-              mensuality: true,
-              dateFinished: validity,
-              hours: "1 month",
-              type: data.vehicleType,
-              cash: parameter.cash,
-              change: parameter.change,
-            };
-            recipManager.createRecip(currentReserve).then(async (resRecip) => {
-              let dateStart = moment().tz("America/Bogota");
-              const params = {
-                Message: `¡Hola! Esperamos tengas una excelente experiencia en Zona P. ${"\n"} Renovaste tu mensualidad para nuestro parqueadero a las ${
-                  dateStart.hours() - 12 > 0
-                    ? dateStart.hours() - 12
-                    : dateStart.hours()
-                }:${
-                  dateStart.minutes() < 10
-                    ? "0" + dateStart.minutes()
-                    : dateStart.minutes()
-                } ${
-                  dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                }. ${"\n"} Aquí está tu recibo: http://zonap-recip.s3-website-us-east-1.amazonaws.com/?rid=${
-                  resRecip.id
-                } ${"\n"} Tus datos serán tratados conforme a nuestra política de privacidad, la encuentras en https://bit.ly/3rQeKDM`,
-                PhoneNumber: data.userPhone,
-                MessageAttributes: {
-                  "AWS.SNS.SMS.SMSType": {
-                    DataType: "String",
-                    StringValue: "Transactional",
-                  },
-                },
-              };
-              sns.publish(params, (err, data) => {
-                if (err) {
-                  console.log("publish[ERR] ", err, err.stack);
-                  return reject(err);
+            coupons
+              .getUserCoupons({
+                phone: parameter.phone,
+                promotionType: "discount",
+              })
+              .then((coupons) => {
+                let coupon;
+                if (coupons.response === 1) {
+                  coupon = coupons.coupons.find(
+                    (coupon) => coupon.hqId === parameter.hqId && coupon.isValid
+                  );
                 }
-                console.log("publish[data] ", data);
-                resolve({ response: 1, message: "renewed" });
+                let total =
+                  data.vehicleType === "car"
+                    ? hqData.data.monthlyCarPrice
+                    : hqData.data.monthlyBikePrice;
+                if (coupon) {
+                  if (parameter.vehicleType === "car") {
+                    total =
+                      total -
+                      Math.ceil(
+                        (total * parseFloat(coupon.value.car.month) / 100.0)
+                      );
+                  } else {
+                    total =
+                      total -
+                      Math.ceil(
+                        (total * parseFloat(coupon.value.bike.month) / 100.0)
+                      );
+                  }
+                }
+                let currentReserve = {
+                  hqId: data.hqId,
+                  plate: data.plates,
+                  phone: data.userPhone,
+                  total: total,
+                  officialEmail: parameter.officialEmail,
+                  dateStart: moment().tz("America/Bogota").toDate(),
+                  mensuality: true,
+                  dateFinished: validity,
+                  hours: "1 month",
+                  type: data.vehicleType,
+                  cash: parameter.cash,
+                  change: parameter.change,
+                };
+                recipManager
+                  .createRecip(currentReserve)
+                  .then(async (resRecip) => {
+                    let dateStart = moment().tz("America/Bogota");
+                    const params = {
+                      Message: `¡Hola! Renovaste tu mensualidad. Hora: ${
+                        dateStart.hours() - 12 > 0
+                          ? dateStart.hours() - 12
+                          : dateStart.hours()
+                      }:${
+                        dateStart.minutes() < 10
+                          ? "0" + dateStart.minutes()
+                          : dateStart.minutes()
+                      } ${
+                        dateStart.hours() - 12 > 0 ? "PM" : "AM"
+                      }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
+                        resRecip.id
+                      }. Más información: https://bit.ly/3rQeKDM`,
+                      PhoneNumber: data.userPhone,
+                      MessageAttributes: {
+                        "AWS.SNS.SMS.SMSType": {
+                          DataType: "String",
+                          StringValue: "Transactional",
+                        },
+                      },
+                    };
+                    sns.publish(params, (err, data) => {
+                      if (err) {
+                        console.log("publish[ERR] ", err, err.stack);
+                        return reject(err);
+                      }
+                      console.log("publish[data] ", data);
+                      resolve({ response: 1, message: "renewed" });
+                    });
+                  });
+              })
+              .catch((err) => {
+                console.log("[renewMensuality - ERR]:");
+                reject(err);
               });
-            });
           } catch (err) {
             console.log("[renewMensuality - ERR]:");
             console.log(err);
@@ -555,4 +629,3 @@ module.exports.renewMensuality = (parameter) => {
     }
   });
 };
-

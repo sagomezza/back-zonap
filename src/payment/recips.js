@@ -19,7 +19,9 @@ module.exports.createRecip = (parameter) => {
             let data = doc.data();
             let numberId = data.recipId.numberId + 1;
             let stringId = data.recipId.stringId;
-            const response = await db
+            console.log(stringId, numberId, stringId + numberId ) 
+            console.log(parameter);
+            await db
               .collection("recips")
               .doc(stringId + numberId)
               .set(parameter);
