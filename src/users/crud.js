@@ -564,9 +564,30 @@ module.exports.getUserRecips = async (parameter) => {
   });
 };
 
-module.exports.bulkUsers = (parameter) => {
-    return new Promise(async (resolve, reject) => {
-        
+module.exports.bulkCreateUser = (parameter) => {
+    return new Promise((resolve, reject) => {
+        try {
+            let promises = [];
+            parameter.users.forEach(user => {
+                user.type = "full"
+                user.expoToken = "no"
+                user.email = "no"
+                promises.push(this.createUser(user))
+            })
+            let result = Promise.all(promises)
+            result.then(() => {
+                resolve({ response: 1, message: `Users created` })
+            })
+            .catch(err => {
+                console.log('Error bulk create user', err)
+                reject({ response: 0, err: JSON.stringify(err, 2) });
+                return;
+            })
+        } catch (err) {
+            console.log('Error bulkCreateUser', err);
+            reject({ response: 0, err: JSON.stringify(err, 2) });
+            return;
+        }
     })
 }
 
