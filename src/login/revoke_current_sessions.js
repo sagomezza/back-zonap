@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
 
-module.exports.revoke_current_sessions = function (params) {
+module.exports = function (params) {
   const { uid, deviceId } = params;
   return new Promise((resolve, reject) => {
     try {
