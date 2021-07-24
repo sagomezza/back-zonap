@@ -231,9 +231,7 @@ module.exports.startParking = (parameter) => {
                       dateStart.minutes() < 10
                         ? "0" + dateStart.minutes()
                         : dateStart.minutes()
-                    } ${
-                      dateStart.hours() - 12 > 0 ? "PM" : "AM"
-                    } Placa: ${
+                    } ${dateStart.hours() - 12 > 0 ? "PM" : "AM"} Placa: ${
                       parameter.plate
                     }. Más información: https://bit.ly/3rQeKDM`,
                     PhoneNumber: parameter.phone,
@@ -541,19 +539,24 @@ module.exports.checkParking = (parameter) => {
                 })
                 .then((coupons) => {
                   let coupon;
-                  console.log(coupons)
+                  console.log(coupons);
                   if (coupons.response === 1) {
                     coupon = coupons.coupons.find(
                       (coupon) =>
-                        coupon.hqId === parameter.hqId &&
-                        coupon.isValid
+                        coupon.hqId === parameter.hqId && coupon.isValid
                     );
                   }
-                  console.log(coupon)
-                  if (coupon)
-                    currentReserve.total =
-                      total - (total * parseFloat(coupon.value.hours)) / 100.0;
-                  else currentReserve.total = total;
+                  if (coupon) {
+                    if (currentReserve.type === "car")
+                      currentReserve.total = Math.ceil(
+                        (total * parseFloat(coupon.value.car.hours)) / 100.0
+                      );
+                    else
+                      currentReserve.total = Math.ceil(
+                        (total * parseFloat(coupon.value.bike.hours)) / 100.0
+                      );
+                  } else currentReserve.total = total;
+
                   currentReserve.hours = hours;
                   currentReserve.officialEmail = parameter.officialEmail;
                   currentReserve.dateStart = currentReserve.dateStart.toDate();
@@ -1122,9 +1125,7 @@ module.exports.prepayFullDay = (parameter, reservation) => {
               let coupon;
               if (coupons.response === 1) {
                 coupon = coupons.coupons.find(
-                  (coupon) =>
-                    coupon.hqId === parameter.hqId &&
-                    coupon.isValid
+                  (coupon) => coupon.hqId === parameter.hqId && coupon.isValid
                 );
               }
               console.log(coupon);
@@ -1132,9 +1133,17 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                 parameter.type === "car"
                   ? resultHq.data.dailyCarPrice
                   : resultHq.data.dailyBikePrice;
-              if (coupon)
-                total = total - (total * parseFloat(coupon.value.day)) / 100.0;
-              console.log(total);
+              if (coupon) {
+                if (parameter.vehicleType === "car") {
+                  total = Math.ceil(
+                    (total * parseFloat(coupon.value.car.day)) / 100.0
+                  );
+                } else {
+                  total = Math.ceil(
+                    (total * parseFloat(coupon.value.bike.day)) / 100.0
+                  );
+                }
+              }
               if (reservation && reservation.plate) {
                 code = reservation.verificationCode;
                 dateStart = reservation.dateStart;
@@ -1391,9 +1400,7 @@ module.exports.qrPay = (parameter) => {
                             resolve("done");
                           });
                           let params = {
-                            Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${
-                              parameter.recipId
-                            }`,
+                            Message: `Tu pago ha sido registrado exitosamente. Recibo: https://tinyurl.com/bur82ydc/?rid=${parameter.recipId}`,
                             PhoneNumber: parameter.phone,
                             MessageAttributes: {
                               "AWS.SNS.SMS.SMSType": {

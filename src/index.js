@@ -146,37 +146,19 @@ app.get("/", (req, res) => {
 
 // ---------------------- USER LOGIN ---------------------------
 app.post("/createLoginUser", (req, res) =>
-  create_user(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  create_user.create_user(req, res)
 );
 
 app.post("/requestOneTimePassword", (req, res) =>
-  requestOneTimePassword(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  requestOneTimePassword.request_one_time_password(req, res)
 );
 
 app.post("/verifyOneTimePassword", (req, res) =>
-  verifyOneTimePassword(req, res)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    })
+  verifyOneTimePassword.verify_one_time_password(req, res)
 );
 
 app.post("/revoke_current_sessions", (req, res) =>
-  revoke_current_sessions(req.body, res)
+  revoke_current_sessions.revoke_current_sessions(req.body, res)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );

@@ -11,7 +11,7 @@ const sns = new SNS({
     region: 'us-east-1',
 });
 
-module.exports = function (req, res) {
+module.exports.request_one_time_password = function (req, res) {
     if (!req.body.phone) {
         return res.status(422).send({ error: 'Ingrese un numero telefonico' });
     }

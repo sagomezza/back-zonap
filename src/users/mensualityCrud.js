@@ -132,17 +132,26 @@ module.exports.createMensuality = (parameter) => {
                         if (coupons.response === 1) {
                           coupon = coupons.coupons.find(
                             (coupon) =>
-                              coupon.hqId === parameter.hqId &&
-                              coupon.isValid
+                              coupon.hqId === parameter.hqId && coupon.isValid
                           );
                         }
                         let total =
                           parameter.vehicleType === "car"
                             ? hqRes.data.monthlyCarPrice
                             : hqRes.data.monthlyBikePrice;
-                        if (coupon)
-                          total =
-                            total - (total * parseFloat(coupon.value.month)) / 100.0;
+                        if (coupon) {
+                          if (parameter.vehicleType === "car") {
+                            total = Math.ceil(
+                              (total * parseFloat(coupon.value.car.month)) /
+                                100.0
+                            );
+                          } else {
+                            total = Math.ceil(
+                              (total * parseFloat(coupon.value.bike.month)) /
+                                100.0
+                            );
+                          }
+                        }
                         parameter.total = total;
                         let currentReserve = {
                           hqId: parameter.hqId,
@@ -158,7 +167,7 @@ module.exports.createMensuality = (parameter) => {
                           cash: parameter.cash,
                           change: parameter.change,
                         };
-                        console.log(currentReserve)
+                        console.log(currentReserve);
                         recipManager
                           .createRecip(currentReserve)
                           .then(async (resRecip) => {
@@ -524,17 +533,28 @@ module.exports.renewMensuality = (parameter) => {
                 let coupon;
                 if (coupons.response === 1) {
                   coupon = coupons.coupons.find(
-                    (coupon) =>
-                      coupon.hqId === parameter.hqId &&
-                      coupon.isValid
+                    (coupon) => coupon.hqId === parameter.hqId && coupon.isValid
                   );
                 }
                 let total =
-                data.vehicleType  === "car"
+                  data.vehicleType === "car"
                     ? hqData.data.monthlyCarPrice
                     : hqData.data.monthlyBikePrice;
-                if (coupon)
-                  total = total - (total * parseFloat(coupon.value.month)) / 100.0;
+                if (coupon) {
+                  if (parameter.vehicleType === "car") {
+                    total =
+                      total -
+                      Math.floor(
+                        (total * parseFloat(coupon.value.car.month)) / 100.0
+                      );
+                  } else {
+                    total =
+                      total -
+                      Math.floor(
+                        (total * parseFloat(coupon.value.bike.month)) / 100.0
+                      );
+                  }
+                }
                 let currentReserve = {
                   hqId: data.hqId,
                   plate: data.plates,
