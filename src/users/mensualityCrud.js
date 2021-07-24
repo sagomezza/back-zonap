@@ -144,17 +144,15 @@ module.exports.createMensuality = (parameter) => {
                             total =
                               total -
                               Math.ceil(
-                                total *
-                                  (1 -
-                                    parseFloat(coupon.value.car.month) / 100.0)
+                                (total * parseFloat(coupon.value.car.month) /
+                                  100.0)
                               );
                           } else {
                             total =
                               total -
                               Math.ceil(
-                                total *
-                                  (1 -
-                                    parseFloat(coupon.value.bike.month) / 100.0)
+                                (total * parseFloat(coupon.value.bike.month) /
+                                  100.0)
                               );
                           }
                         }
@@ -551,17 +549,13 @@ module.exports.renewMensuality = (parameter) => {
                     total =
                       total -
                       Math.ceil(
-                        total *
-                          (1 -
-                            parseFloat(coupon.value.car.month) / 100.0)
+                        (total * parseFloat(coupon.value.car.month) / 100.0)
                       );
                   } else {
                     total =
                       total -
                       Math.ceil(
-                        total *
-                          (1 -
-                            parseFloat(coupon.value.bike.month) / 100.0)
+                        (total * parseFloat(coupon.value.bike.month) / 100.0)
                       );
                   }
                 }

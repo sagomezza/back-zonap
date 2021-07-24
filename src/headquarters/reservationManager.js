@@ -549,11 +549,11 @@ module.exports.checkParking = (parameter) => {
                   if (coupon) {
                     if (currentReserve.type === "car")
                       currentReserve.total = total -  Math.ceil(
-                        (total * (1 - (parseFloat(coupon.value.car.hours) / 100.0)))
+                        (total * parseFloat(coupon.value.car.hours) / 100.0)
                       );
                     else
                       currentReserve.total = total -  Math.ceil(
-                        (total * (1 - (parseFloat(coupon.value.bike.hours) / 100.0)))
+                        (total * parseFloat(coupon.value.bike.hours) / 100.0)
                       );
                   } else currentReserve.total = total;
 
@@ -1136,11 +1136,11 @@ module.exports.prepayFullDay = (parameter, reservation) => {
               if (coupon) {
                 if (parameter.vehicleType === "car") {
                   total = total - Math.ceil(
-                    (total * (1 - (parseFloat(coupon.value.car.day) / 100.0)))
+                    (total * parseFloat(coupon.value.car.day) / 100.0)
                   );
                 } else {
                   total = total - Math.ceil(
-                    (total * (1 - (parseFloat(coupon.value.bike.day) / 100.0)))
+                    (total * parseFloat(coupon.value.bike.day) / 100.0)
                   );
                 }
               }
