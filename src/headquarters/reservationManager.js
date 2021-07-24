@@ -1135,11 +1135,11 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                   : resultHq.data.dailyBikePrice;
               if (coupon) {
                 if (parameter.vehicleType === "car") {
-                  total = Math.ceil(
+                  total = total - Math.ceil(
                     (total * parseFloat(coupon.value.car.day)) / 100.0
                   );
                 } else {
-                  total = Math.ceil(
+                  total = total - Math.ceil(
                     (total * parseFloat(coupon.value.bike.day)) / 100.0
                   );
                 }

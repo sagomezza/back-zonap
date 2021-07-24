@@ -564,6 +564,12 @@ module.exports.getUserRecips = async (parameter) => {
   });
 };
 
+module.exports.bulkUsers = (parameter) => {
+    return new Promise(async (resolve, reject) => {
+        
+    })
+}
+
 // module.exports.getUsers = async (parameter) => {
 //     return new Promise (async (resolve, reject) => {
 //         try {
