@@ -1137,17 +1137,15 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                 parameter.type === "car"
                   ? resultHq.data.dailyCarPrice
                   : resultHq.data.dailyBikePrice;
+              console.log(total, parseFloat(coupon.value.car.day) / 100.0, Math.ceil(total - (total * (parseFloat(coupon.value.car.day) / 100.0))))
               if (coupon) {
-                if (parameter.vehicleType === "car") {
-                  total = total - Math.ceil(
-                    (total * parseFloat(coupon.value.car.day) / 100.0)
-                  );
+                if (parameter.type === "car") {
+                  total =  Math.ceil(total - (total * (parseFloat(coupon.value.car.day) / 100.0)));
                 } else {
-                  total = total - Math.ceil(
-                    (total * parseFloat(coupon.value.bike.day) / 100.0)
-                  );
+                  total = Math.ceil(total - (total * (parseFloat(coupon.value.bike.day) / 100.0)));
                 }
               }
+              console.log(total)
               if (reservation && reservation.plate) {
                 code = reservation.verificationCode;
                 dateStart = reservation.dateStart;

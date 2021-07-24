@@ -196,6 +196,16 @@ app.post("/createUser", (req, res) =>
     })
 );
 
+app.post("/bulkCreateUser", (req, res) =>
+  userCrud
+    .bulkCreateUser(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => {
+      console.log(err);
+      res.status(422).send(err);
+    })
+);
+
 app.post("/readUser", (req, res) =>
   userCrud
     .readUser(req.body)

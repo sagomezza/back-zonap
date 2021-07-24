@@ -141,19 +141,9 @@ module.exports.createMensuality = (parameter) => {
                             : hqRes.data.monthlyBikePrice;
                         if (coupon) {
                           if (parameter.vehicleType === "car") {
-                            total =
-                              total -
-                              Math.ceil(
-                                (total * parseFloat(coupon.value.car.month) /
-                                  100.0)
-                              );
+                            total = Math.ceil(total - (total * (parseFloat(coupon.value.car.month) / 100.0)));
                           } else {
-                            total =
-                              total -
-                              Math.ceil(
-                                (total * parseFloat(coupon.value.bike.month) /
-                                  100.0)
-                              );
+                            total = Math.ceil(total - (total * (parseFloat(coupon.value.bike.month) / 100.0)));
                           }
                         }
                         parameter.total = total;
