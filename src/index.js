@@ -879,16 +879,27 @@ coupon
     .catch((err) => res.status(422).send(err))
 );
 
+<<<<<<< HEAD
 app.post("/bulkClaimCoupon", (req, res) =>
 coupon
     .bulkClaimCoupon(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+<<<<<<< HEAD
 
+=======
+=======
+>>>>>>> e3e0db0 (checkUserParkingTotal function and fixes on index)
 app.post("/getUserCoupons", (req, res) =>
 coupon
     .getUserCoupons(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+<<<<<<< HEAD
+=======
+
+console.log(parseFloat('10%') / 100.0);
+>>>>>>> df506a3 (checkUserParkingTotal function and fixes on index)
+>>>>>>> e3e0db0 (checkUserParkingTotal function and fixes on index)
