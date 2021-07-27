@@ -819,14 +819,14 @@ server.listen(8000, () => {
 
 //---------------------VEHICLES--------------------------
 app.post("/deleteVehicle", (req, res) =>
-  newsReport
+  userCrud
     .deleteVehicle(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
 
 app.post("/updateVehicle", (req, res) =>
-  newsReport
+  userCrud
     .updateVehicle(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
