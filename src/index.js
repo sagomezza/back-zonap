@@ -548,6 +548,13 @@ app.post("/qrPay", (req, res) => {
     });
 });
 
+app.post("/checkUserParkingTotal", (req, res) =>
+  reservationManager
+    .checkUserParkingTotal(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 // ---------------------- RECIPS---------------------------
 app.post("/createRecip", (req, res) =>
   recips
@@ -848,6 +855,13 @@ app.post("/checkCoupon", (req, res) =>
 app.post("/deleteCoupon", (req, res) =>
 coupon
     .deleteCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/getUserCoupons", (req, res) =>
+coupon
+    .getUserCoupons(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
