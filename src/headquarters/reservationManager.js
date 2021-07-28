@@ -437,7 +437,6 @@ module.exports.checkParking = (parameter) => {
               let hours = diff.asHours();
               let minutes = diff.asMinutes();
               let days = diff.asDays();
-<<<<<<< HEAD
               let total = 0;
               if (!currentReserve.mensuality) {
                 if (days >= 1) {
@@ -533,8 +532,6 @@ module.exports.checkParking = (parameter) => {
                   }
                 }
               }
-=======
->>>>>>> bc873697c4951edecb46aaf4aed72e7ddb3d0239
               coupons
                 .getUserCoupons({
                   phone: parameter.phone,
