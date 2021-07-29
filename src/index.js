@@ -158,7 +158,7 @@ app.post("/verifyOneTimePassword", (req, res) =>
 );
 
 app.post("/revoke_current_sessions", (req, res) =>
-  revoke_current_sessions.revoke_current_sessions(req.body, res)
+  revoke_current_sessions(req.body, res)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
@@ -859,11 +859,16 @@ coupon
     .catch((err) => res.status(422).send(err))
 );
 
+app.post("/bulkClaimCoupon", (req, res) =>
+coupon
+    .bulkClaimCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 app.post("/getUserCoupons", (req, res) =>
 coupon
     .getUserCoupons(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
-
-console.log(parseFloat('10%') / 100.0);

@@ -311,7 +311,10 @@ module.exports.claimCoupon = (parameter) => {
                     if (
                       couponResult.data.claimedBy.includes(parameter.claimedBy)
                     ) {
-                      reject({response: -5, message: "Coupon already claimed"});
+                      reject({
+                        response: -5,
+                        message: "Coupon already claimed",
+                      });
                     } else if (
                       couponResult.data.claimedBy.length >
                       couponResult.data.maxUsers
@@ -469,6 +472,25 @@ module.exports.getUserCoupons = (parameter) => {
           }
         });
         resolve({ response: 1, coupons: coupons, ids: ids });
+      });
+  });
+};
+
+module.exports.bulkClaimCoupon = (parameter) => {
+  return new Promise((resolve, reject) => {
+    let promises = [];
+    parameter.phones.forEach((phone) => {
+      promises.push(
+        this.claimCoupon({ claimedBy: phone, coupon: parameter.coupon })
+      );
+    });
+    let results = Promise.all(promises);
+    results
+      .then((results) => {
+        resolve({ response: 1, message: "claimed coupon", results });
+      })
+      .catch((err) => {
+        reject({ response: -1, err });
       });
   });
 };
