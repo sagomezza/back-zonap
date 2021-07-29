@@ -284,6 +284,13 @@ app.post("/editOfficial", (req, res) =>
     .catch((err) => res.status(422).send(err))
 );
 
+app.post("/changePassword", (req, res) =>
+  officialCrud
+    .changePassword(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 // ---------------------- CORPO CRUD ---------------------------
 app.post("/createCorporation", (req, res) =>
   corporationCrud
@@ -540,6 +547,13 @@ app.post("/qrPay", (req, res) => {
       res.status(422).send(err);
     });
 });
+
+app.post("/checkUserParkingTotal", (req, res) =>
+  reservationManager
+    .checkUserParkingTotal(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
 
 // ---------------------- RECIPS---------------------------
 app.post("/createRecip", (req, res) =>
@@ -805,14 +819,14 @@ server.listen(8000, () => {
 
 //---------------------VEHICLES--------------------------
 app.post("/deleteVehicle", (req, res) =>
-  newsReport
+  userCrud
     .deleteVehicle(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
 
 app.post("/updateVehicle", (req, res) =>
-  newsReport
+  userCrud
     .updateVehicle(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
@@ -841,6 +855,13 @@ app.post("/checkCoupon", (req, res) =>
 app.post("/deleteCoupon", (req, res) =>
 coupon
     .deleteCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/getUserCoupons", (req, res) =>
+coupon
+    .getUserCoupons(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
