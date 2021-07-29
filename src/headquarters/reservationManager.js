@@ -1578,7 +1578,7 @@ module.exports.checkUserParkingTotal = (parameter) => {
       let hqRef = db.collection("headquarters").doc(parameter.hqId);
 
       coupons
-      .getUserCoupons({phone: parameter.phone,  promotionType: "discount"})
+      .getUserCoupons({phone: parameter.phone})
       .then(result => {
         //console.log('RESULT',result)
         let coupon = result.coupons
