@@ -158,7 +158,7 @@ app.post("/verifyOneTimePassword", (req, res) =>
 );
 
 app.post("/revoke_current_sessions", (req, res) =>
-  revoke_current_sessions.revoke_current_sessions(req.body, res)
+  revoke_current_sessions(req.body, res)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
