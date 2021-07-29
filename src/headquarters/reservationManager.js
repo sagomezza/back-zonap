@@ -663,7 +663,7 @@ module.exports.checkParking = (parameter) => {
                         currentReserve.total = Number(strTotal);
                       }
                     } else currentReserve.total = total;
-                  }
+                  } else currentReserve.total = 0;
                   currentReserve.hours = hours;
                   currentReserve.officialEmail = parameter.officialEmail;
                   currentReserve.dateStart = currentReserve.dateStart.toDate();
