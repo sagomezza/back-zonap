@@ -845,4 +845,9 @@ coupon
     .catch((err) => res.status(422).send(err))
 );
 
-console.log(parseFloat('10%') / 100.0);
+app.post("/bulkClaimCoupon", (req, res) =>
+coupon
+    .bulkClaimCoupon(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
