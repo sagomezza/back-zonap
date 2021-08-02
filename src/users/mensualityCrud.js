@@ -17,7 +17,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -520,7 +520,7 @@ module.exports.renewMensuality = (parameter) => {
               .update({ validity, status: "active" });
             coupons
               .getUserCoupons({
-                phone: parameter.phone,
+                phone: res.data[0].userPhone,
                 promotionType: "discount",
               })
               .then((coupons) => {
