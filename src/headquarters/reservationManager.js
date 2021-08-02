@@ -22,7 +22,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -835,6 +835,7 @@ module.exports.finishParking = (parameter) => {
                 try {
                   let currentReserve = resultPark.data;
                   currentReserve.total = parameter.total;
+                  currentReserve.creditCardPay = false;
                   let docData = doc.data();
                   currentReserve.dateFinished =
                     admin.firestore.Timestamp.fromDate(parameter.dateFinished);
@@ -1508,6 +1509,7 @@ module.exports.qrPay = (parameter) => {
                       recipData.phone = parameter.phone;
                       recipData.total = parameter.total;
                       recipData.dateFinished = moment().tz("America/Bogota");
+                      recipData.creditCardPay = true
                       recipManager
                         .createRecip(recipData)
                         .then(async (res) => {

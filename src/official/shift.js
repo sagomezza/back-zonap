@@ -312,6 +312,7 @@ module.exports.getShiftRecips = (parameter) => {
                         .where("dateFinished", ">=", dateStart)
                         .where("dateFinished", "<=", dateEnd)
                         .where("officialEmail", "==", parameter.email)
+                        .where("creditCardPay", "==", false)
                         .orderBy("dateFinished", "desc");
                       recipsRef
                         .get()
