@@ -133,7 +133,7 @@ module.exports.startShift = (parameter) => {
             await officialRef.update(data);
             resolve({ response: 1, message: "Shift started" });
           } else {
-            resolve({ response: 2, message: "Shift is already started"})
+            resolve({ response: 2, message: "Shift has already started"})
           }
         } catch (err) {
           console.log(err);
@@ -312,6 +312,7 @@ module.exports.getShiftRecips = (parameter) => {
                         .where("dateFinished", ">=", dateStart)
                         .where("dateFinished", "<=", dateEnd)
                         .where("officialEmail", "==", parameter.email)
+                        .where("creditCardPay", "==", false)
                         .orderBy("dateFinished", "desc");
                       recipsRef
                         .get()
