@@ -2,7 +2,7 @@ const express = require("express");
 let path = require("path");
 const admin = require("firebase-admin");
 var cron = require("node-cron");
-
+const moment  = require("moment-timezone");
 require("dotenv").config({ path: path.resolve(__dirname + "/.env") });
 
 const auth = require("./leancore/token");
@@ -101,7 +101,7 @@ admin.firestore().settings({
 // userCrud.migrateBalance()
 // .then(result => console.log(result))
 // .catch(err => console.log(err) )
-
+console.log(moment().format("YYYY-MM-DD HH:mm:ss"));
 var task = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
