@@ -223,7 +223,7 @@ module.exports.startParking = (parameter) => {
                 await hqRef.update(data);
                 if (!parameter.isParanoic) {
                   const params = {
-                    Message: `Tu código Zona P es: (${code}). Hora: ${
+                    Message: `Bienvenido a Zona P tu código es (${code}) hora: ${
                       dateStart.hours() - 12 > 0
                         ? dateStart.hours() - 12
                         : dateStart.hours()
@@ -231,9 +231,9 @@ module.exports.startParking = (parameter) => {
                       dateStart.minutes() < 10
                         ? "0" + dateStart.minutes()
                         : dateStart.minutes()
-                    } ${dateStart.hours() - 12 > 0 ? "PM" : "AM"} Placa: ${
+                    } ${dateStart.hours() - 12 > 0 ? "PM" : "AM"} placa: ${
                       parameter.plate
-                    }. Más información: https://bit.ly/3rQeKDM`,
+                    }. Tus datos serán  tratados según esta política https://bit.ly/3rQeKDM`,
                     PhoneNumber: parameter.phone,
                     MessageAttributes: {
                       "AWS.SNS.SMS.SMSType": {
