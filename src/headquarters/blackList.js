@@ -15,7 +15,8 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      TargetArn:
+        "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -176,19 +177,21 @@ module.exports.payDebts = (parameter) => {
         reject({ response: -1, message: `Missing data: value` });
         return;
       }
-      if (
-        (!parameter.change && Number(parameter.change) !== Number(0)) ||
-        parameter.change === null
-      ) {
-        reject({ response: -1, message: `Missing data: change` });
-        return;
-      }
-      if (
-        (!parameter.cash && Number(parameter.cash) !== Number(0)) ||
-        parameter.cash === null
-      ) {
-        reject({ response: -1, message: `Missing data: cash` });
-        return;
+      if(parameter.generateRecip) {
+        if (
+          (!parameter.change && Number(parameter.change) !== Number(0)) ||
+          parameter.change === null
+        ) {
+          reject({ response: -1, message: `Missing data: change` });
+          return;
+        }
+        if (
+          (!parameter.cash && Number(parameter.cash) !== Number(0)) ||
+          parameter.cash === null
+        ) {
+          reject({ response: -1, message: `Missing data: cash` });
+          return;
+        }
       }
       this.readBlackList(parameter)
         .then(async (res) => {
@@ -207,68 +210,71 @@ module.exports.payDebts = (parameter) => {
               data.value = res.data.value - parameter.value;
             }
             await db.collection("blacklist").doc(res.data.id).update(data);
-            let vehicleType =
-              /[a-zA-Z]/.test(res.data.plate[5]) || res.data.plate.length === 5
-                ? "bike"
-                : "car";
-            let reciData = {
-              hqId: res.data.hqId,
-              plate: res.data.plate,
-              phone: res.data.userPhones[0],
-              total: data.value > 0 ? data.value : parameter.value,
-              officialEmail: parameter.officialEmail,
-              dateFactured: dateFactured.toDate(),
-              blackList: true,
-              type: vehicleType,
-              cash: parameter.cash,
-              change: parameter.change,
-            };
-            recipManager
-              .createRecip(reciData)
-              .then(async (resRecip) => {
-                await db
-                  .collection("blacklist")
-                  .doc(res.data.id)
-                  .update({
-                    recipIds: admin.firestore.FieldValue.arrayUnion(
+            if (parameter.generateRecip) {
+              let vehicleType =
+                /[a-zA-Z]/.test(res.data.plate[5]) ||
+                res.data.plate.length === 5
+                  ? "bike"
+                  : "car";
+              let reciData = {
+                hqId: res.data.hqId,
+                plate: res.data.plate,
+                phone: res.data.userPhones[0],
+                total: data.value > 0 ? data.value : parameter.value,
+                officialEmail: parameter.officialEmail,
+                dateFactured: dateFactured.toDate(),
+                blackList: true,
+                type: vehicleType,
+                cash: parameter.cash,
+                change: parameter.change,
+              };
+              recipManager
+                .createRecip(reciData)
+                .then(async (resRecip) => {
+                  await db
+                    .collection("blacklist")
+                    .doc(res.data.id)
+                    .update({
+                      recipIds: admin.firestore.FieldValue.arrayUnion(
+                        resRecip.id
+                      ),
+                    });
+                  const params = {
+                    Message: `Deuda pagada a las ${
+                      dateFactured.hours() - 12 > 0
+                        ? dateFactured.hours() - 12
+                        : dateFactured.hours()
+                    }:${
+                      dateFactured.minutes() < 10
+                        ? "0" + dateFactured.minutes()
+                        : dateFactured.minutes()
+                    } ${
+                      dateFactured.hours() - 12 > 0 ? "PM" : "AM"
+                    }. ${"\n"} Recibo: https://tinyurl.com/bur82ydc?rid=${
                       resRecip.id
-                    ),
-                  });
-                const params = {
-                  Message: `Deuda pagada a las ${
-                    dateFactured.hours() - 12 > 0
-                      ? dateFactured.hours() - 12
-                      : dateFactured.hours()
-                  }:${
-                    dateFactured.minutes() < 10
-                      ? "0" + dateFactured.minutes()
-                      : dateFactured.minutes()
-                  } ${
-                    dateFactured.hours() - 12 > 0 ? "PM" : "AM"
-                  }. ${"\n"} Recibo: https://tinyurl.com/bur82ydc?rid=${
-                    resRecip.id
-                  }`,
-                  PhoneNumber: res.data.userPhones[0],
-                  MessageAttributes: {
-                    "AWS.SNS.SMS.SMSType": {
-                      DataType: "String",
-                      StringValue: "Transactional",
+                    }`,
+                    PhoneNumber: res.data.userPhones[0],
+                    MessageAttributes: {
+                      "AWS.SNS.SMS.SMSType": {
+                        DataType: "String",
+                        StringValue: "Transactional",
+                      },
                     },
-                  },
-                };
-                sns.publish(params, (err, data) => {
-                  if (err) {
-                    console.log("publish[ERR] ", err, err.stack);
-                    return reject(err);
-                  }
-                  console.log("publish[data] ", data);
-                  resolve({ response: 1, message: `BL payed` });
+                  };
+                  sns.publish(params, (err, data) => {
+                    if (err) {
+                      console.log("publish[ERR] ", err, err.stack);
+                      return reject(err);
+                    }
+                    console.log("publish[data] ", data);
+                    resolve({ response: 1, message: `BL payed` });
+                  });
+                })
+                .catch((err) => {
+                  console.log(err);
+                  reject(err);
                 });
-              })
-              .catch((err) => {
-                console.log(err);
-                reject(err);
-              });
+            }
           } catch (err) {
             console.log(err);
             reject(err);

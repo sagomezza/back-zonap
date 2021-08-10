@@ -887,6 +887,7 @@ module.exports.finishParking = (parameter) => {
                                       hqId: parameter.hqId,
                                       plate: parameter.plate,
                                       value: currentReserve.pendingValue,
+                                      generateRecip: false
                                     })
                                     .then((res) => {
                                       finishPay(
