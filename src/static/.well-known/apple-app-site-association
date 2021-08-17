@@ -1,0 +1,10 @@
+{
+    "applinks": {
+        "apps": [],
+        "details": [{
+            "appID": "XJ53559HDK.com.corpaul.zonapusuarios",
+	    "paths": ["/Payment/*"]
+            },
+        ]
+    }
+}

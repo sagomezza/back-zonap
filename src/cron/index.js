@@ -45,8 +45,16 @@ innerPromise = (reserve, doc, type) => {
           else data.prepaySave = []
         } else {
           let filteredReservations = doc.data().reservations.filter(reserv => { return reserv.plate !== reserve.plate })
+          let reservation = doc.data().reservations.find(reserv => { return reserv.plate === reserve.plate })
+          reservation.prepayFullDay = false
+          reservation.dateStart = dateFinished
+          delete reservation.dateFinished
+          delete reservation.cash
+          delete reservation.change
+          delete reservation.total
           if (filteredReservations) data.reservations = filteredReservations
           else data.reservations = []
+          data.reservations.push(reservation);
         }
         await hqRef.update(data)
         resolve("done")

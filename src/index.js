@@ -2,7 +2,7 @@ const express = require("express");
 let path = require("path");
 const admin = require("firebase-admin");
 var cron = require("node-cron");
-
+const moment  = require("moment-timezone");
 require("dotenv").config({ path: path.resolve(__dirname + "/.env") });
 
 const auth = require("./leancore/token");
@@ -101,7 +101,7 @@ admin.firestore().settings({
 // userCrud.migrateBalance()
 // .then(result => console.log(result))
 // .catch(err => console.log(err) )
-
+console.log(moment().format("YYYY-MM-DD HH:mm:ss"));
 var task = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
@@ -140,8 +140,28 @@ const recordIdempotency = (hash, response) => {
   return "hashed";
 };
 
+app.enable('trust proxy');
+
+app.use(express.static(__dirname + '/node_modules'));
+
+app.use(express.static(__dirname + '/static', { dotfiles: 'allow' }))
+
 app.get("/", (req, res) => {
   res.send("I'm okay");
+});
+
+app.get(/^\/(TabNavigator*|Payment*|PaymentDetails*)/, (req, res, next) => {
+  var userAgent = req.header('user-agent');
+  // console.log('[userAgent] ', userAgent);
+  if (/android|Android/i.test(userAgent)) {
+    res.redirect('https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US');
+  }
+  else if (/iPad|iPhone|iPod/i.test(userAgent)) {
+    res.redirect('https://apps.apple.com/co/app/zona-p/id1576261346');
+  }
+  else {
+    res.redirect('https://zonap.com/');
+  }
 });
 
 // ---------------------- USER LOGIN ---------------------------
