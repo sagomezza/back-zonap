@@ -22,7 +22,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -116,6 +116,7 @@ module.exports.startParking = (parameter) => {
                   if (parameter.prepayFullDay) {
                     prepayFullDayFlag = true;
                     reservation.prepayFullDay = true;
+                    reservation.dateFinished = moment(reservation.dateStart.toDate()).tz("America/Bogota").add(1, "days").toDate();
                     await this.prepayFullDay(parameter, reservation)
                       .then(async (result) => {
                         let filtered = resultHq.data.reservations.filter(
@@ -434,9 +435,11 @@ module.exports.checkParking = (parameter) => {
                 "America/Bogota"
               );
               let diff = moment.duration(dateFinished.diff(dateStart));
-              let hours = diff.asHours();
+              let hours = diff.asHours() - 24;
               let minutes = diff.asMinutes();
-              let days = diff.asDays();
+              let days = diff.asDays() - 1;
+              console.log(days);
+              console.log(hours);
               coupons
                 .getUserCoupons({
                   phone: parameter.phone,
@@ -470,6 +473,7 @@ module.exports.checkParking = (parameter) => {
                           total += doc.data().dailyBikePrice * Math.floor(days);
                       }
                       let residualHours = hours - 24 * Math.floor(days);
+                      console.log(residualHours);
                       if (
                         (residualHours >= 5 && residualHours <= 24) ||
                         (Math.floor(residualHours) === 4 && diff.minutes() > 31)
@@ -1301,6 +1305,7 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                 const db = admin.firestore();
                 let hqRef = db.collection("headquarters").doc(parameter.hqId);
                 dateStart = parameter.dateStart.toDate();
+                parameter.dateFinished =  moment(parameter.dateStart.toDate()).tz("America/Bogota").add(1, "days").toDate();
                 let data = {
                   reservations:
                     admin.firestore.FieldValue.arrayUnion(parameter),

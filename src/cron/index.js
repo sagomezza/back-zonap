@@ -47,7 +47,7 @@ innerPromise = (reserve, doc, type) => {
           let filteredReservations = doc.data().reservations.filter(reserv => { return reserv.plate !== reserve.plate })
           let reservation = doc.data().reservations.find(reserv => { return reserv.plate === reserve.plate })
           reservation.prepayFullDay = false
-          reservation.dateStart = dateFinished
+          reservation.dateStart = dateFinished.toDate()
           delete reservation.dateFinished
           delete reservation.cash
           delete reservation.change
