@@ -1815,6 +1815,8 @@ module.exports.checkUserParkingTotal = (parameter) => {
                     }
                   }
                 }
+              }else if (currentReserve.mensuality) {
+                total = 0
               }
               currentReserve.total = total;
               currentReserve.hours = hours;
