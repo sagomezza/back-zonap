@@ -199,9 +199,9 @@ module.exports.startParking = (parameter) => {
                 }
               }
               const code = Number(
-                String(Math.floor(Math.random() * new Date().getTime())).substr(
+                String(Math.floor(Math.random() * parameter.phone.substr(7,14))).substr(
                   0,
-                  5
+                  7
                 )
               );
               parameter.verificationCode = code;
