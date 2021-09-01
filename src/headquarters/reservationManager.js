@@ -462,12 +462,12 @@ module.exports.checkParking = (parameter) => {
               let dateStart = moment(currentReserve.dateStart.toDate()).tz(
                 "America/Bogota"
               );
+              let diff = moment.duration(dateFinished.diff(dateStart));
+              let hours = diff.asHours() - 24;
               currentReserve.hours = hours;
               currentReserve.officialEmail = parameter.officialEmail;
               currentReserve.dateStart = currentReserve.dateStart.toDate();
               if (!currentReserve.mensuality) {
-                let diff = moment.duration(dateFinished.diff(dateStart));
-                let hours = diff.asHours() - 24;
                 let minutes = diff.asMinutes();
                 let days = diff.asDays() - 1;
                 let dailyPrice = 0;
