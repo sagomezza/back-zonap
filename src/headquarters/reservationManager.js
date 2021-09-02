@@ -569,7 +569,7 @@ module.exports.checkParking = (parameter) => {
                       );
                     } else {
                       total += calculateADay(
-                        residualHours,
+                        hours,
                         hoursPrice,
                         dailyPrice,
                         fractionPrice,
