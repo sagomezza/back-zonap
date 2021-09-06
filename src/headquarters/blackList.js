@@ -15,8 +15,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn:
-        "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {

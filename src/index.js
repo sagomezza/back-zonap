@@ -150,7 +150,7 @@ app.get("/", (req, res) => {
   res.send("I'm okay");
 });
 
-app.get(/^\/(TabNavigator*|Payment*|PaymentDetails*)/, (req, res, next) => {
+app.get(/^\/(parkingId*)/, (req, res, next) => {
   var userAgent = req.header('user-agent');
   // console.log('[userAgent] ', userAgent);
   if (/android|Android/i.test(userAgent)) {

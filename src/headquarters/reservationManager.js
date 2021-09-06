@@ -22,7 +22,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -56,10 +56,10 @@ module.exports.startParking = (parameter) => {
         reject({ response: -1, message: `Missing data: type` });
         return;
       }
-      if (!parameter.officialEmail) {
-        reject({ response: -1, message: `Missing data: officialEmail` });
-        return;
-      }
+      // if (!parameter.officialEmail) {
+      //   reject({ response: -1, message: `Missing data: officialEmail` });
+      //   return;
+      // }
       hqCrud
         .readHq({ id: parameter.hqId })
         .then(async (resultHq) => {
@@ -116,6 +116,12 @@ module.exports.startParking = (parameter) => {
                   if (parameter.prepayFullDay) {
                     prepayFullDayFlag = true;
                     reservation.prepayFullDay = true;
+                    reservation.dateFinished = moment(
+                      reservation.dateStart.toDate()
+                    )
+                      .tz("America/Bogota")
+                      .add(1, "days")
+                      .toDate();
                     await this.prepayFullDay(parameter, reservation)
                       .then(async (result) => {
                         let filtered = resultHq.data.reservations.filter(
@@ -193,9 +199,9 @@ module.exports.startParking = (parameter) => {
                 }
               }
               const code = Number(
-                String(Math.floor(Math.random() * new Date().getTime())).substr(
+                String(Math.floor(Math.random() * parameter.phone.substr(7,14))).substr(
                   0,
-                  5
+                  7
                 )
               );
               parameter.verificationCode = code;
@@ -368,6 +374,29 @@ const checkMensuality = (parameter) => {
   });
 };
 
+const calculateADay = (
+  hours,
+  hoursPrice,
+  dailyPrice,
+  fractionPrice,
+  diff,
+  minutes
+) => {
+  let total = 0;
+  if (hours * hoursPrice >= dailyPrice) total += dailyPrice;
+  else if (hours >= 1) {
+    total += Math.floor(hours) * hoursPrice;
+    if (diff.minutes() >= 0 && diff.minutes() <= 30 && hours < 1)
+      total += fractionPrice;
+    else if (diff.minutes() > 31) total += hoursPrice;
+  } else {
+    if (minutes <= 5 && minutes >= 0 && hours < 1) total += 0;
+    else if (minutes > 5 && minutes <= 30 && hours < 1) total += fractionPrice;
+    else total += hoursPrice;
+  }
+  return total;
+};
+
 module.exports.checkParking = (parameter) => {
   return new Promise((resolve, reject) => {
     try {
@@ -434,227 +463,121 @@ module.exports.checkParking = (parameter) => {
                 "America/Bogota"
               );
               let diff = moment.duration(dateFinished.diff(dateStart));
-              let hours = diff.asHours();
-              let minutes = diff.asMinutes();
-              let days = diff.asDays();
-              coupons
-                .getUserCoupons({
-                  phone: parameter.phone,
-                  promotionType: "discount",
-                })
-                .then((coupons) => {
-                  let coupon;
-                  if (coupons.response === 1) {
-                    coupon = coupons.coupons.find(
-                      (coupon) =>
-                        coupon.hqId === parameter.hqId && coupon.isValid
-                    );
-                  }
-                  let total = 0;
-                  let fraction = 0;
-                  let dayDisc = 0;
-                  if (!currentReserve.mensuality) {
-                    if (days >= 1) {
-                      if (currentReserve.type === "car") {
-                        if (coupon && coupon.value.car.day) {
-                          dayDisc +=
-                            doc.data().dailyCarPrice * Math.floor(days);
-                        } else
-                          total += doc.data().dailyCarPrice * Math.floor(days);
-                      }
-                      if (currentReserve.type === "bike") {
-                        if (coupon && coupon.value.bike.day) {
-                          dayDisc +=
-                            doc.data().dailyBikePrice * Math.floor(days);
-                        } else
-                          total += doc.data().dailyBikePrice * Math.floor(days);
-                      }
-                      let residualHours = hours - 24 * Math.floor(days);
-                      if (
-                        (residualHours >= 5 && residualHours <= 24) ||
-                        (Math.floor(residualHours) === 4 && diff.minutes() > 31)
-                      ) {
+              let hours = diff.asHours() - 24;
+              currentReserve.hours = hours;
+              currentReserve.officialEmail = parameter.officialEmail;
+              currentReserve.dateStart = currentReserve.dateStart.toDate();
+              if (!currentReserve.mensuality) {
+                let minutes = diff.asMinutes();
+                let days = diff.asDays() - 1;
+                let dailyPrice = 0;
+                let hoursPrice = 0;
+                let fractionPrice = 0;
+                if (currentReserve.type === "car") {
+                  dailyPrice = doc.data().dailyCarPrice;
+                  hoursPrice = doc.data().hourCarPrice;
+                  fractionPrice = doc.data().fractionCarPrice;
+                } else {
+                  dailyPrice = doc.data().dailyBikePrice;
+                  hoursPrice = doc.data().hourBikePrice;
+                  fractionPrice = doc.data().fractionBikePrice;
+                }
+                coupons
+                  .getUserCoupons({
+                    phone: parameter.phone,
+                    promotionType: "discount",
+                  })
+                  .then((coupons) => {
+                    let coupon;
+                    if (coupons.response === 1) {
+                      coupon = coupons.coupons.find(
+                        (coupon) =>
+                          coupon.hqId === parameter.hqId && coupon.isValid
+                      );
+                      if (coupon) {
                         if (currentReserve.type === "car") {
-                          if (coupon && coupon.value.car.day) {
-                            dayDisc +=
-                              doc.data().dailyCarPrice * Math.floor(days);
-                          } else
-                            total +=
-                              doc.data().dailyCarPrice * Math.floor(days);
-                        }
-                        if (currentReserve.type === "bike") {
-                          if (coupon && coupon.value.bike.day) {
-                            dayDisc +=
-                              doc.data().dailyBikePrice * Math.floor(days);
-                          } else
-                            total +=
-                              doc.data().dailyBikePrice * Math.floor(days);
-                        }
-                      } else if (residualHours >= 1 && residualHours < 5) {
-                        if (currentReserve.type === "car")
-                          total +=
-                            Math.floor(residualHours) * doc.data().hourCarPrice;
-                        if (currentReserve.type === "bike")
-                          total +=
-                            Math.floor(residualHours) *
-                            doc.data().hourBikePrice;
-                        if (
-                          diff.minutes() > 5 &&
-                          diff.minutes() <= 30 &&
-                          residualHours < 1
-                        ) {
-                          if (currentReserve.type === "car") {
-                            if (coupon && coupon.value.car.fraction) {
-                              fraction += doc.data().fractionCarPrice;
-                            } else total += doc.data().fractionCarPrice;
+                          if (coupon.value.car.day) {
+                            dailyPrice =
+                              dailyPrice -
+                              Math.round(
+                                (dailyPrice *
+                                  parseFloat(coupon.value.car.day)) /
+                                  100.0
+                              );
                           }
-                          if (currentReserve.type === "bike") {
-                            if (coupon && coupon.value.bike.fraction) {
-                              fraction += doc.data().fractionBikePrice;
-                            } else total += doc.data().fractionBikePrice;
+                          if (coupon.value.car.hours) {
+                            hoursPrice =
+                              hoursPrice -
+                              Math.round(
+                                (hoursPrice *
+                                  parseFloat(coupon.value.car.hours)) /
+                                  100.0
+                              );
                           }
-                        } else if (diff.minutes() > 31) {
-                          if (currentReserve.type === "car")
-                            total += doc.data().hourCarPrice;
-                          if (currentReserve.type === "bike")
-                            total += doc.data().hourBikePrice;
-                        }
-                      } else {
-                        if (minutes <= 5 && minutes >= 0 && hours < 1) {
-                          total += 0;
-                        } else if (minutes > 5 && minutes <= 30 && hours < 1) {
-                          if (currentReserve.type === "car") {
-                            if (coupon && coupon.value.car.fraction) {
-                              fraction += doc.data().fractionCarPrice;
-                            } else total += doc.data().fractionCarPrice;
-                          }
-                          if (currentReserve.type === "bike") {
-                            if (coupon && coupon.value.bike.fraction) {
-                              fraction += doc.data().fractionBikePrice;
-                            } else total += doc.data().fractionBikePrice;
+                          if (coupon.value.car.fraction) {
+                            fractionPrice =
+                              fractionPrice -
+                              Math.round(
+                                (fractionPrice *
+                                  parseFloat(coupon.value.car.fraction)) /
+                                  100.0
+                              );
                           }
                         } else {
-                          if (currentReserve.type === "car")
-                            total += doc.data().hourCarPrice;
-                          if (currentReserve.type === "bike")
-                            total += doc.data().hourBikePrice;
-                        }
-                      }
-                    } else {
-                      if (
-                        (hours >= 5 && hours <= 24) ||
-                        (Math.floor(hours) === 4 && diff.minutes() > 31)
-                      ) {
-                        if (currentReserve.type === "car") {
-                          if (coupon && coupon.value.car.day) {
-                            dayDisc +=
-                              doc.data().dailyCarPrice;
-                          } else
-                            total +=
-                              doc.data().dailyCarPrice;
-                        }
-                        if (currentReserve.type === "bike") {
-                          if (coupon && coupon.value.bike.day) {
-                            dayDisc +=
-                              doc.data().dailyBikePrice;
-                          } else
-                            total +=
-                              doc.data().dailyBikePrice;
-                        }
-                      } else if (hours >= 1 && hours < 5) {
-                        if (currentReserve.type === "car")
-                          total = doc.data().hourCarPrice * Math.floor(hours);
-                        if (currentReserve.type === "bike")
-                          total = doc.data().hourBikePrice * Math.floor(hours);
-                        if (diff.minutes() >= 0 && diff.minutes() <= 30) {
-                          if (currentReserve.type === "car") {
-                            if (coupon && coupon.value.car.fraction) {
-                              fraction += doc.data().fractionCarPrice;
-                            } else total += doc.data().fractionCarPrice;
+                          if (coupon.value.bike.day) {
+                            dailyPrice =
+                              dailyPrice -
+                              Math.round(
+                                (dailyPrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0
+                              );
                           }
-                          if (currentReserve.type === "bike") {
-                            if (coupon && coupon.value.bike.fraction) {
-                              fraction += doc.data().fractionBikePrice;
-                            } else total += doc.data().fractionBikePrice;
+                          if (coupon.value.bike.hours) {
+                            hoursPrice =
+                              hoursPrice -
+                              Math.round(
+                                (hoursPrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0
+                              );
                           }
-                        } else if (diff.minutes() > 31) {
-                          if (currentReserve.type === "car")
-                            total += doc.data().hourCarPrice;
-                          if (currentReserve.type === "bike")
-                            total += doc.data().hourBikePrice;
-                        }
-                      } else {
-                        if (minutes <= 5 && minutes >= 0 && hours < 1) {
-                          total = 0;
-                        } else if (minutes > 5 && minutes <= 30 && hours < 1) {
-                          if (currentReserve.type === "car") {
-                            if (coupon && coupon.value.car.fraction) {
-                              fraction += doc.data().fractionCarPrice;
-                            } else total += doc.data().fractionCarPrice;
+                          if (coupon.value.bike.fraction) {
+                            fractionPrice =
+                              fractionPrice -
+                              Math.round(
+                                (fractionPrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0
+                              );
                           }
-                          if (currentReserve.type === "bike") {
-                            if (coupon && coupon.value.bike.fraction) {
-                              fraction += doc.data().fractionBikePrice;
-                            } else total += doc.data().fractionBikePrice;
-                          }
-                        } else {
-                          if (currentReserve.type === "car")
-                            total = doc.data().hourCarPrice;
-                          if (currentReserve.type === "bike")
-                            total = doc.data().hourBikePrice;
                         }
                       }
                     }
+                    let total = 0;
+
+                    if (days >= 1) {
+                      total += dailyPrice * Math.floor(days);
+                      let residualHours = hours - 24 * Math.floor(days);
+                      total += calculateADay(
+                        residualHours,
+                        hoursPrice,
+                        dailyPrice,
+                        fractionPrice,
+                        diff,
+                        minutes
+                      );
+                    } else {
+                      total += calculateADay(
+                        hours,
+                        hoursPrice,
+                        dailyPrice,
+                        fractionPrice,
+                        diff,
+                        minutes
+                      );
+                    }
                     if (coupon) {
-                      if (currentReserve.type === "car") {
-                        if (fraction > 0) {
-                          fraction =
-                            fraction -
-                            Math.round(
-                              (fraction *
-                                parseFloat(coupon.value.car.fraction)) /
-                                100.0
-                            );
-                        }
-                        if (dayDisc > 0)
-                          dayDisc =
-                            dayDisc -
-                            Math.round(
-                              (dayDisc * parseFloat(coupon.value.car.day)) /
-                                100.0
-                            );
-                        currentReserve.total =
-                          total -
-                          Math.ceil(
-                            (total * parseFloat(coupon.value.car.hours)) / 100.0
-                          ) +
-                          fraction +
-                          dayDisc;
-                      } else {
-                        if (fraction > 0)
-                          fraction =
-                            fraction -
-                            Math.round(
-                              (fraction *
-                                parseFloat(coupon.value.bike.fraction)) /
-                                100.0
-                            );
-                        if (dayDisc > 0)
-                          dayDisc =
-                            dayDisc -
-                            Math.round(
-                              (dayDisc * parseFloat(coupon.value.bike.day)) /
-                                100.0
-                            );
-                        currentReserve.total =
-                          total -
-                          Math.ceil(
-                            (total * parseFloat(coupon.value.bike.hours)) /
-                              100.0
-                          ) +
-                          fraction +
-                          dayDisc;
-                      }
                       let strTotal = String(currentReserve.total);
                       if (strTotal[strTotal.length - 1] === "9") {
                         currentReserve.total += 1;
@@ -663,53 +586,57 @@ module.exports.checkParking = (parameter) => {
                         currentReserve.total = Number(strTotal);
                       }
                     } else currentReserve.total = total;
-                  } else currentReserve.total = 0;
-                  currentReserve.hours = hours;
-                  currentReserve.officialEmail = parameter.officialEmail;
-                  currentReserve.dateStart = currentReserve.dateStart.toDate();
-                  blCrud
-                    .readBlackList({
-                      hqId: parameter.hqId,
-                      plate: currentReserve.plate,
-                    })
-                    .then((result) => {
-                      try {
-                        if (result.response === 1) {
-                          currentReserve.pendingValue = result.data.value;
-                          currentReserve.valuePark = total;
-                          currentReserve.total += result.data.value;
-                          resolve({
-                            response: 1,
-                            message: `Parking data calculated`,
-                            data: currentReserve,
-                            recipIds: result.data.recipIds,
-                          });
-                        } else {
-                          resolve({
-                            response: 1,
-                            message: `Parking data calculated`,
-                            data: currentReserve,
-                          });
+                    blCrud
+                      .readBlackList({
+                        hqId: parameter.hqId,
+                        plate: currentReserve.plate,
+                      })
+                      .then((result) => {
+                        try {
+                          if (result.response === 1) {
+                            currentReserve.pendingValue = result.data.value;
+                            currentReserve.valuePark = total;
+                            currentReserve.total += result.data.value;
+                            resolve({
+                              response: 1,
+                              message: `Parking data calculated`,
+                              data: currentReserve,
+                              recipIds: result.data.recipIds,
+                            });
+                          } else {
+                            resolve({
+                              response: 1,
+                              message: `Parking data calculated`,
+                              data: currentReserve,
+                            });
+                          }
+                        } catch (err) {
+                          console.log(err);
+                          reject(err);
                         }
-                      } catch (err) {
-                        console.log(err);
-                        reject(err);
-                      }
-                    })
-                    .catch((err) => {
-                      if (err.response === -2)
-                        resolve({
-                          response: 1,
-                          message: `Parking data calculated`,
-                          data: currentReserve,
-                        });
-                      else reject(err);
-                    });
-                })
-                .catch((err) => {
-                  console.log(err);
-                  reject(err);
+                      })
+                      .catch((err) => {
+                        if (err.response === -2)
+                          resolve({
+                            response: 1,
+                            message: `Parking data calculated`,
+                            data: currentReserve,
+                          });
+                        else reject(err);
+                      });
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    reject(err);
+                  });
+              } else {
+                currentReserve.total = 0;
+                resolve({
+                  response: 1,
+                  message: `Parking data calculated`,
+                  data: currentReserve,
                 });
+              }
             } else {
               if (parameter.verificationCode) {
                 reject({
@@ -887,7 +814,7 @@ module.exports.finishParking = (parameter) => {
                                       hqId: parameter.hqId,
                                       plate: parameter.plate,
                                       value: currentReserve.pendingValue,
-                                      generateRecip: false
+                                      generateRecip: false,
                                     })
                                     .then((res) => {
                                       finishPay(
@@ -950,10 +877,12 @@ module.exports.finishParking = (parameter) => {
                       });
                   }
                   if (currentReserve.isParanoic) {
-                    let paranoicRef = await db.collection("paranoics").doc(parameter.phone)
-                    await paranoicRef.update({plate: null})
+                    let paranoicRef = await db
+                      .collection("paranoics")
+                      .doc(parameter.phone);
+                    await paranoicRef.update({ plate: null });
                   }
-                } catch (err) { 
+                } catch (err) {
                   console.log(err);
                   reject(err);
                 }
@@ -1301,6 +1230,10 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                 const db = admin.firestore();
                 let hqRef = db.collection("headquarters").doc(parameter.hqId);
                 dateStart = parameter.dateStart.toDate();
+                parameter.dateFinished = moment(parameter.dateStart.toDate())
+                  .tz("America/Bogota")
+                  .add(1, "days")
+                  .toDate();
                 let data = {
                   reservations:
                     admin.firestore.FieldValue.arrayUnion(parameter),
@@ -1510,7 +1443,7 @@ module.exports.qrPay = (parameter) => {
                       recipData.phone = parameter.phone;
                       recipData.total = parameter.total;
                       recipData.dateFinished = moment().tz("America/Bogota");
-                      recipData.creditCardPay = true
+                      recipData.creditCardPay = true;
                       recipManager
                         .createRecip(recipData)
                         .then(async (res) => {
@@ -1581,304 +1514,450 @@ module.exports.checkUserParkingTotal = (parameter) => {
       let hqRef = db.collection("headquarters").doc(parameter.hqId);
 
       coupons
-      .getUserCoupons({phone: parameter.phone})
-      .then(result => {
-        //console.log('RESULT',result)
-        let coupon = result.coupons
-        if(result.response === 1){
-          coupon = coupon[0]
-        }
-        // const coupon = 
-        //   (result) =>
-        //     result.hqId === parameter.hqId &&
-        //     result.isValid
-        
-        //console.log('COUPON',coupon)
-        hqRef
-        .get()
-        .then(async (doc) => {
-          try {
-
-            if (!doc.exists) {
-              console.log("Hq not found");
-              reject({ response: -1, err: "Hq not found!" });
-              return;
-            }
-            let reservations = doc.data().reservations;
-            if (reservations.length === 0) {
-              reject({
-                response: -2,
-                message: `The HQ doesn't have any user parked`,
-              });
-              return;
-            }
-            let currentReserve;
-            if (parameter.phone)
-              currentReserve = reservations.find(
-                (reserve) => reserve.phone === parameter.phone
-              );
-            else if (parameter.verificationCode)
-              currentReserve = reservations.find(
-                (reserve) =>
-                  reserve.verificationCode === parameter.verificationCode
-              );
-            if (currentReserve) {
-              if (currentReserve.prepayFullDay) {
-                currentReserve.total = 0;
-                currentReserve.hours = 24;
-                currentReserve.dateStart = currentReserve.dateStart.toDate();
-                resolve({ response: 1, data: currentReserve });
-                return;
-              }
-              let dateFinished = moment().tz("America/Bogota");
-              let dateStart = moment(currentReserve.dateStart.toDate()).tz(
-                "America/Bogota"
-              );
-              currentReserve.totalTime = moment(dateFinished.diff(dateStart));
-              let diff = moment.duration(dateFinished.diff(dateStart));
-              let hours = diff.asHours();
-              let minutes = diff.asMinutes();
-              let days = diff.asDays();
-              let total = 0;
-              if (!currentReserve.mensuality) {
-                if (days >= 1) {
-                  if (currentReserve.type === "car"){
-                    coupon 
-                    ? total = (doc.data().dailyCarPrice - (Math.round(Math.floor(doc.data().dailyCarPrice * parseFloat(coupon.value.car.day) / 100.0)))) * Math.floor(days)
-                    : total = doc.data().dailyCarPrice * Math.floor(days)
-                  }
-                  if (currentReserve.type === "bike"){
-                    coupon 
-                    ? total = (doc.data().dailyBikePrice - (doc.data().dailyBikePrice * parseFloat(coupon.value.bike.day) / 100.0)) * Math.floor(days)
-                    : total = doc.data().dailyBikePrice * Math.floor(days)
-                  }
-                  let residualHours = hours - 24 * Math.floor(days);
-                  if (
-                    (residualHours >= 5 && residualHours <= 24) ||
-                    (Math.floor(residualHours) === 4 && diff.minutes() > 31)
-                  ) {
-                    if (currentReserve.type === "car"){
-                      coupon
-                      ? total += doc.data().dailyCarPrice - (Math.round(Math.floor(doc.data().dailyCarPrice * parseFloat(coupon.value.car.day) / 100.0)))
-                      : total += doc.data().dailyCarPrice
-                    }
-                    if (currentReserve.type === "bike"){
-                      coupon
-                      ? total += doc.data().dailyBikePrice - (doc.data().dailyBikePrice * parseFloat(coupon.value.bike.day) / 100.0) 
-                      : total += doc.data().dailyBikePrice
-                    }
-                  } else if (residualHours >= 1 && residualHours < 5) {
-                    if (currentReserve.type === "car"){
-                      coupon
-                      ? total += Math.floor(residualHours) * (doc.data().hourCarPrice - (doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 100.0))
-                      : total += Math.floor(residualHours) * doc.data().hourCarPrice
-                    }
-
-                    if (currentReserve.type === "bike"){
-                      coupon
-                      ? total += Math.floor(residualHours) * (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                      : total += Math.floor(residualHours) * doc.data().hourBikePrice
-                    }
-                    if (
-                      diff.minutes() > 5 &&
-                      diff.minutes() <= 30 &&
-                      residualHours < 1
-                    ) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += doc.data().fractionCarPrice - doc.data().fractionCarPrice * parseFloat(coupon.value.car.fraction) / 100.0
-                        : total += doc.data().fractionCarPrice 
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += doc.data().fractionBikePrice - doc.data().fractionBikePrice * parseFloat(coupon.value.bike.fraction) / 100.0
-                        : total += doc.data().fractionBikePrice 
-                      }
-                    } else if (diff.minutes() > 31) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += (doc.data().hourCarPrice - (doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 100.0))
-                        : total += doc.data().hourCarPrice
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                        : total += doc.data().hourBikePrice
-                      }
-                    }
-                  } else {
-                    if (minutes <= 5 && minutes >= 0 && hours < 1) {
-                      total += 0;
-                    } else if (minutes > 5 && minutes <= 30 && hours < 1) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += doc.data().fractionCarPrice - doc.data().fractionCarPrice * parseFloat(coupon.value.car.fraction) / 100.0
-                        : total += doc.data().fractionCarPrice 
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += doc.data().fractionBikePrice - doc.data().fractionBikePrice * parseFloat(coupon.value.bike.fraction) / 100.0
-                        : total += doc.data().fractionBikePrice 
-                      }
-                    } else {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += (doc.data().hourCarPrice - (doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 100.0))
-                        : total += doc.data().hourCarPrice
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                        : total += doc.data().hourBikePrice
-                      }
-                    }
-                  }
-                } else {
-                  if (
-                    (hours >= 5 && hours <= 24) ||
-                    (Math.floor(hours) === 4 && diff.minutes() > 31)
-                  ) {
-                    if (currentReserve.type === "car"){
-                      coupon
-                      ? total = Math.ceil(doc.data().dailyCarPrice - (doc.data().dailyCarPrice * parseFloat(coupon.value.car.day)  / 100.0))
-                      : total = doc.data().dailyCarPrice
-                    }
-                    if (currentReserve.type === "bike"){
-                      coupon
-                      ? total = doc.data().dailyBikePrice - (doc.data().dailyBikePrice * parseFloat(coupon.value.bike.day)  / 100.0)
-                      : total = doc.data().dailyBikePrice
-                    }
-                  } else if (hours >= 1 && hours < 5) {
-                    if (currentReserve.type === "car"){
-                      coupon
-                      ? total = Math.floor(hours) * (doc.data().hourCarPrice - (Math.round(Math.floor(doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 10000.0)) * 100))
-                      : total = Math.floor(hours) * doc.data().hourCarPrice
-                    }
-                    if (currentReserve.type === "bike"){
-                      coupon
-                      ? total = Math.floor(hours) * (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                      : total = Math.floor(hours) * doc.data().hourBikePrice
-                    }
-                    if (diff.minutes() >= 0 && diff.minutes() <= 30) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += doc.data().fractionCarPrice - doc.data().fractionCarPrice * parseFloat(coupon.value.car.fraction) / 100.0
-                        : total += doc.data().fractionCarPrice 
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += doc.data().fractionBikePrice - doc.data().fractionBikePrice * parseFloat(coupon.value.bike.fraction) / 100.0
-                        : total += doc.data().fractionBikePrice 
-                      }
-                    } else if (diff.minutes() > 31) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total += (doc.data().hourCarPrice - (Math.round(Math.floor(doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 10000.0)).toFixed(2) * 100))
-                        : total += doc.data().hourCarPrice
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total += (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                        : total += doc.data().hourBikePrice
-                      }
-                    }
-                  } else {
-                    if (minutes <= 5 && minutes >= 0 && hours < 1) {
-                      total = 0;
-                    } else if (minutes > 5 && minutes <= 30 && hours < 1) {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total = doc.data().fractionCarPrice - doc.data().fractionCarPrice * parseFloat(coupon.value.car.fraction) / 100.0
-                        : total = doc.data().fractionCarPrice 
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total = doc.data().fractionBikePrice - doc.data().fractionBikePrice * parseFloat(coupon.value.bike.fraction) / 100.0
-                        : total = doc.data().fractionBikePrice 
-                      }
-                    } else {
-                      if (currentReserve.type === "car"){
-                        coupon
-                        ? total = (doc.data().hourCarPrice - (Math.round(Math.floor(doc.data().hourCarPrice * parseFloat(coupon.value.car.hours) / 10000.0)).toFixed(2) * 100))
-                        : total = doc.data().hourCarPrice
-                      }
-                      if (currentReserve.type === "bike"){
-                        coupon
-                        ? total = (doc.data().hourBikePrice - (doc.data().hourBikePrice * parseFloat(coupon.value.bike.hours) / 100.0))
-                        : total = doc.data().hourBikePrice
-                      }
-                    }
-                  }
-                }
-              }
-              currentReserve.total = total;
-              currentReserve.hours = hours;
-              currentReserve.dateStart = currentReserve.dateStart.toDate();
-              blCrud
-                .readBlackList({
-                  hqId: parameter.hqId,
-                  plate: currentReserve.plate,
-                })
-                .then((result) => {
-                  try {
-                    if (result.response === 1) {
-                      currentReserve.pendingValue = result.data.value;
-                      currentReserve.valuePark = total;
-                      currentReserve.total += result.data.value;
-                      resolve({
-                        response: 1,
-                        message: `Parking data calculated`,
-                        data: currentReserve,
-                        recipIds: result.data.recipIds,
-                      });
-                    } else {
-                      resolve({
-                        response: 1,
-                        message: `Parking data calculated`,
-                        data: currentReserve,
-                      });
-                    }
-                  } catch (err) {
-                    console.log(err);
-                    reject(err);
-                  }
-                })
-                .catch((err) => {
-                  if (err.response === -2)
-                    resolve({
-                      response: 1,
-                      message: `Parking data calculated`,
-                      data: currentReserve,
-                    });
-                  else reject(err);
-                });
-            } else {
-              if (parameter.verificationCode) {
-                reject({
-                  response: -3,
-                  message: `ALERT: The verification code you sent doesn't match with the one generated for the parking!`,
-                });
-                return;
-              }
-              reject({ response: -2, message: "Reservation not found" });
-              return;
-            }
-          } catch (err) {
-            console.log(err);
-            reject(err);
+        .getUserCoupons({ phone: parameter.phone })
+        .then((result) => {
+          //console.log('RESULT',result)
+          let coupon = result.coupons;
+          if (result.response === 1) {
+            coupon = coupon[0];
           }
+          // const coupon =
+          //   (result) =>
+          //     result.hqId === parameter.hqId &&
+          //     result.isValid
+
+          //console.log('COUPON',coupon)
+          hqRef
+            .get()
+            .then(async (doc) => {
+              try {
+                if (!doc.exists) {
+                  console.log("Hq not found");
+                  reject({ response: -1, err: "Hq not found!" });
+                  return;
+                }
+                let reservations = doc.data().reservations;
+                if (reservations.length === 0) {
+                  reject({
+                    response: -2,
+                    message: `The HQ doesn't have any user parked`,
+                  });
+                  return;
+                }
+                let currentReserve;
+                if (parameter.phone)
+                  currentReserve = reservations.find(
+                    (reserve) => reserve.phone === parameter.phone
+                  );
+                else if (parameter.verificationCode)
+                  currentReserve = reservations.find(
+                    (reserve) =>
+                      reserve.verificationCode === parameter.verificationCode
+                  );
+                if (currentReserve) {
+                  if (currentReserve.prepayFullDay) {
+                    currentReserve.total = 0;
+                    currentReserve.hours = 24;
+                    currentReserve.dateStart =
+                      currentReserve.dateStart.toDate();
+                    resolve({ response: 1, data: currentReserve });
+                    return;
+                  }
+                  let dateFinished = moment().tz("America/Bogota");
+                  let dateStart = moment(currentReserve.dateStart.toDate()).tz(
+                    "America/Bogota"
+                  );
+                  currentReserve.totalTime = moment(
+                    dateFinished.diff(dateStart)
+                  );
+                  let diff = moment.duration(dateFinished.diff(dateStart));
+                  let hours = diff.asHours();
+                  let minutes = diff.asMinutes();
+                  let days = diff.asDays();
+                  let total = 0;
+                  if (!currentReserve.mensuality) {
+                    if (days >= 1) {
+                      if (currentReserve.type === "car") {
+                        coupon
+                          ? (total =
+                              (doc.data().dailyCarPrice -
+                                Math.round(
+                                  Math.floor(
+                                    (doc.data().dailyCarPrice *
+                                      parseFloat(coupon.value.car.day)) /
+                                      100.0
+                                  )
+                                )) *
+                              Math.floor(days))
+                          : (total =
+                              doc.data().dailyCarPrice * Math.floor(days));
+                      }
+                      if (currentReserve.type === "bike") {
+                        coupon
+                          ? (total =
+                              (doc.data().dailyBikePrice -
+                                (doc.data().dailyBikePrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0) *
+                              Math.floor(days))
+                          : (total =
+                              doc.data().dailyBikePrice * Math.floor(days));
+                      }
+                      let residualHours = hours - 24 * Math.floor(days);
+                      if (
+                        (residualHours >= 5 && residualHours <= 24) ||
+                        (Math.floor(residualHours) === 4 && diff.minutes() > 31)
+                      ) {
+                        if (currentReserve.type === "car") {
+                          coupon
+                            ? (total +=
+                                doc.data().dailyCarPrice -
+                                Math.round(
+                                  Math.floor(
+                                    (doc.data().dailyCarPrice *
+                                      parseFloat(coupon.value.car.day)) /
+                                      100.0
+                                  )
+                                ))
+                            : (total += doc.data().dailyCarPrice);
+                        }
+                        if (currentReserve.type === "bike") {
+                          coupon
+                            ? (total +=
+                                doc.data().dailyBikePrice -
+                                (doc.data().dailyBikePrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0)
+                            : (total += doc.data().dailyBikePrice);
+                        }
+                      } else if (residualHours >= 1 && residualHours < 5) {
+                        if (currentReserve.type === "car") {
+                          coupon
+                            ? (total +=
+                                Math.floor(residualHours) *
+                                (doc.data().hourCarPrice -
+                                  (doc.data().hourCarPrice *
+                                    parseFloat(coupon.value.car.hours)) /
+                                    100.0))
+                            : (total +=
+                                Math.floor(residualHours) *
+                                doc.data().hourCarPrice);
+                        }
+
+                        if (currentReserve.type === "bike") {
+                          coupon
+                            ? (total +=
+                                Math.floor(residualHours) *
+                                (doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0))
+                            : (total +=
+                                Math.floor(residualHours) *
+                                doc.data().hourBikePrice);
+                        }
+                        if (
+                          diff.minutes() > 5 &&
+                          diff.minutes() <= 30 &&
+                          residualHours < 1
+                        ) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionCarPrice -
+                                  (doc.data().fractionCarPrice *
+                                    parseFloat(coupon.value.car.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionBikePrice -
+                                  (doc.data().fractionBikePrice *
+                                    parseFloat(coupon.value.bike.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionBikePrice);
+                          }
+                        } else if (diff.minutes() > 31) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourCarPrice -
+                                  (doc.data().hourCarPrice *
+                                    parseFloat(coupon.value.car.hours)) /
+                                    100.0)
+                              : (total += doc.data().hourCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0)
+                              : (total += doc.data().hourBikePrice);
+                          }
+                        }
+                      } else {
+                        if (minutes <= 5 && minutes >= 0 && hours < 1) {
+                          total += 0;
+                        } else if (minutes > 5 && minutes <= 30 && hours < 1) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionCarPrice -
+                                  (doc.data().fractionCarPrice *
+                                    parseFloat(coupon.value.car.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionBikePrice -
+                                  (doc.data().fractionBikePrice *
+                                    parseFloat(coupon.value.bike.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionBikePrice);
+                          }
+                        } else {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourCarPrice -
+                                  (doc.data().hourCarPrice *
+                                    parseFloat(coupon.value.car.hours)) /
+                                    100.0)
+                              : (total += doc.data().hourCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0)
+                              : (total += doc.data().hourBikePrice);
+                          }
+                        }
+                      }
+                    } else {
+                      if (
+                        (hours >= 5 && hours <= 24) ||
+                        (Math.floor(hours) === 4 && diff.minutes() > 31)
+                      ) {
+                        if (currentReserve.type === "car") {
+                          coupon
+                            ? (total = Math.ceil(
+                                doc.data().dailyCarPrice -
+                                  (doc.data().dailyCarPrice *
+                                    parseFloat(coupon.value.car.day)) /
+                                    100.0
+                              ))
+                            : (total = doc.data().dailyCarPrice);
+                        }
+                        if (currentReserve.type === "bike") {
+                          coupon
+                            ? (total =
+                                doc.data().dailyBikePrice -
+                                (doc.data().dailyBikePrice *
+                                  parseFloat(coupon.value.bike.day)) /
+                                  100.0)
+                            : (total = doc.data().dailyBikePrice);
+                        }
+                      } else if (hours >= 1 && hours < 5) {
+                        if (currentReserve.type === "car") {
+                          coupon
+                            ? (total =
+                                Math.floor(hours) *
+                                (doc.data().hourCarPrice -
+                                  Math.round(
+                                    Math.floor(
+                                      (doc.data().hourCarPrice *
+                                        parseFloat(coupon.value.car.hours)) /
+                                        10000.0
+                                    )
+                                  ) *
+                                    100))
+                            : (total =
+                                Math.floor(hours) * doc.data().hourCarPrice);
+                        }
+                        if (currentReserve.type === "bike") {
+                          coupon
+                            ? (total =
+                                Math.floor(hours) *
+                                (doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0))
+                            : (total =
+                                Math.floor(hours) * doc.data().hourBikePrice);
+                        }
+                        if (diff.minutes() >= 0 && diff.minutes() <= 30) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionCarPrice -
+                                  (doc.data().fractionCarPrice *
+                                    parseFloat(coupon.value.car.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().fractionBikePrice -
+                                  (doc.data().fractionBikePrice *
+                                    parseFloat(coupon.value.bike.fraction)) /
+                                    100.0)
+                              : (total += doc.data().fractionBikePrice);
+                          }
+                        } else if (diff.minutes() > 31) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourCarPrice -
+                                  Math.round(
+                                    Math.floor(
+                                      (doc.data().hourCarPrice *
+                                        parseFloat(coupon.value.car.hours)) /
+                                        10000.0
+                                    )
+                                  ).toFixed(2) *
+                                    100)
+                              : (total += doc.data().hourCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total +=
+                                  doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0)
+                              : (total += doc.data().hourBikePrice);
+                          }
+                        }
+                      } else {
+                        if (minutes <= 5 && minutes >= 0 && hours < 1) {
+                          total = 0;
+                        } else if (minutes > 5 && minutes <= 30 && hours < 1) {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total =
+                                  doc.data().fractionCarPrice -
+                                  (doc.data().fractionCarPrice *
+                                    parseFloat(coupon.value.car.fraction)) /
+                                    100.0)
+                              : (total = doc.data().fractionCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total =
+                                  doc.data().fractionBikePrice -
+                                  (doc.data().fractionBikePrice *
+                                    parseFloat(coupon.value.bike.fraction)) /
+                                    100.0)
+                              : (total = doc.data().fractionBikePrice);
+                          }
+                        } else {
+                          if (currentReserve.type === "car") {
+                            coupon
+                              ? (total =
+                                  doc.data().hourCarPrice -
+                                  Math.round(
+                                    Math.floor(
+                                      (doc.data().hourCarPrice *
+                                        parseFloat(coupon.value.car.hours)) /
+                                        10000.0
+                                    )
+                                  ).toFixed(2) *
+                                    100)
+                              : (total = doc.data().hourCarPrice);
+                          }
+                          if (currentReserve.type === "bike") {
+                            coupon
+                              ? (total =
+                                  doc.data().hourBikePrice -
+                                  (doc.data().hourBikePrice *
+                                    parseFloat(coupon.value.bike.hours)) /
+                                    100.0)
+                              : (total = doc.data().hourBikePrice);
+                          }
+                        }
+                      }
+                    }
+                  } else if (currentReserve.mensuality) {
+                    total = 0;
+                  }
+                  currentReserve.total = total;
+                  currentReserve.hours = hours;
+                  currentReserve.dateStart = currentReserve.dateStart.toDate();
+                  blCrud
+                    .readBlackList({
+                      hqId: parameter.hqId,
+                      plate: currentReserve.plate,
+                    })
+                    .then((result) => {
+                      try {
+                        if (result.response === 1) {
+                          currentReserve.pendingValue = result.data.value;
+                          currentReserve.valuePark = total;
+                          currentReserve.total += result.data.value;
+                          resolve({
+                            response: 1,
+                            message: `Parking data calculated`,
+                            data: currentReserve,
+                            recipIds: result.data.recipIds,
+                          });
+                        } else {
+                          resolve({
+                            response: 1,
+                            message: `Parking data calculated`,
+                            data: currentReserve,
+                          });
+                        }
+                      } catch (err) {
+                        console.log(err);
+                        reject(err);
+                      }
+                    })
+                    .catch((err) => {
+                      if (err.response === -2)
+                        resolve({
+                          response: 1,
+                          message: `Parking data calculated`,
+                          data: currentReserve,
+                        });
+                      else reject(err);
+                    });
+                } else {
+                  if (parameter.verificationCode) {
+                    reject({
+                      response: -3,
+                      message: `ALERT: The verification code you sent doesn't match with the one generated for the parking!`,
+                    });
+                    return;
+                  }
+                  reject({ response: -2, message: "Reservation not found" });
+                  return;
+                }
+              } catch (err) {
+                console.log(err);
+                reject(err);
+              }
+            })
+            .catch((err) => {
+              console.log(err);
+              reject({ response: 0, err });
+              return;
+            });
         })
         .catch((err) => {
           console.log(err);
           reject({ response: 0, err });
           return;
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        reject({ response: 0, err });
-        return;
-      });
     } catch (err) {
       console.log(err);
       reject({ response: 0, err: JSON.stringify(err, 2) });

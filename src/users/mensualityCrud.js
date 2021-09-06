@@ -17,7 +17,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
     },
   },
   function (error) {
@@ -108,10 +108,11 @@ module.exports.createMensuality = (parameter) => {
                   }
                   let response = {};
                   if (parameter.mensualityType === "corporative")
-                    parameter.code = Number(
-                      String(
-                        Math.floor(Math.random() * new Date().getTime())
-                      ).substr(0, 5)
+                    parameter.code =Number(
+                      String(Math.floor(Math.random() * parameter.userPhone.substr(7,14))).substr(
+                        0,
+                        7
+                      )
                     );
                   parameter.plates = [...newPlates];
                   const db = admin.firestore();
