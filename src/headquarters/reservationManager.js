@@ -392,12 +392,12 @@ const calculateADay = (
     total += dailyPrice;
   else if (hours >= 1) {
     total += Math.floor(hours) * hoursPrice;
-    if (diff.minutes() >= 0 && diff.minutes() <= 30)
+    if (diff.minutes() >= 0 && diff.minutes() < 31)
       total += fractionPrice;
     else if (diff.minutes() >= 31) total += hoursPrice;
   } else {
     if (minutes <= 5 && minutes >= 0 && hours < 1 && days < 1) total += 0;
-    else if ((minutes > 5 && minutes <= 30 && hours < 1) || (days >= 1 && minutes < 31)) total += fractionPrice;
+    else if ((minutes > 5 && minutes < 31 && hours < 1) || (days >= 1 && minutes < 31)) total += fractionPrice;
     else total += hoursPrice;
   }
   return total;
