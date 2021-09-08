@@ -380,7 +380,8 @@ const calculateADay = (
   dailyPrice,
   fractionPrice,
   diff,
-  minutes
+  minutes,
+  days
 ) => {
   let total = 0;
   if (
@@ -391,12 +392,12 @@ const calculateADay = (
     total += dailyPrice;
   else if (hours >= 1) {
     total += Math.floor(hours) * hoursPrice;
-    if (diff.minutes() >= 0 && diff.minutes() <= 30 && hours < 1)
+    if (diff.minutes() >= 0 && diff.minutes() <= 30)
       total += fractionPrice;
     else if (diff.minutes() >= 31) total += hoursPrice;
   } else {
-    if (minutes <= 5 && minutes >= 0 && hours < 1) total += 0;
-    else if (minutes > 5 && minutes <= 30 && hours < 1) total += fractionPrice;
+    if (minutes <= 5 && minutes >= 0 && hours < 1 && days < 1) total += 0;
+    else if ((minutes > 5 && minutes <= 30 && hours < 1) || (days >= 1 && minutes < 31)) total += fractionPrice;
     else total += hoursPrice;
   }
   return total;
@@ -574,7 +575,8 @@ module.exports.checkParking = (parameter) => {
                         dailyPrice,
                         fractionPrice,
                         diff,
-                        minutes
+                        minutes,
+                        days
                       );
                     } else {
                       total += calculateADay(
@@ -583,7 +585,8 @@ module.exports.checkParking = (parameter) => {
                         dailyPrice,
                         fractionPrice,
                         diff,
-                        minutes
+                        minutes,
+                        days
                       );
                     }
                     if (coupon) {
