@@ -22,7 +22,8 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      TargetArn:
+        "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -199,10 +200,9 @@ module.exports.startParking = (parameter) => {
                 }
               }
               const code = Number(
-                String(Math.floor(Math.random() * parameter.phone.substr(7,14))).substr(
-                  0,
-                  7
-                )
+                String(
+                  Math.floor(Math.random() * parameter.phone.substr(7, 14))
+                ).substr(0, 7)
               );
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
@@ -383,7 +383,12 @@ const calculateADay = (
   minutes
 ) => {
   let total = 0;
-  if (hours * hoursPrice >= dailyPrice) total += dailyPrice;
+  if (
+    Math.floor(hours) * hoursPrice +
+      (diff.minutes() >= 31 ? hoursPrice : fractionPrice) >=
+    dailyPrice
+  )
+    total += dailyPrice;
   else if (hours >= 1) {
     total += Math.floor(hours) * hoursPrice;
     if (diff.minutes() >= 0 && diff.minutes() <= 30 && hours < 1)
@@ -470,9 +475,9 @@ module.exports.checkParking = (parameter) => {
               if (!currentReserve.mensuality) {
                 let minutes = diff.asMinutes();
                 let days = diff.asDays() - 1;
-                if(days > 1)  {
+                if (days > 1) {
                   days -= 1;
-                  hours -= 24
+                  hours -= 24;
                 }
                 let dailyPrice = 0;
                 let hoursPrice = 0;
