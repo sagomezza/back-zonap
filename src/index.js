@@ -892,5 +892,3 @@ coupon
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
-
-console.log(parseFloat('10%') / 100.0);
