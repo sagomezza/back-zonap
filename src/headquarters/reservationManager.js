@@ -420,10 +420,10 @@ module.exports.checkParking = (parameter) => {
         return;
       }
       // if (!parameter.plate) { reject({ response: -1, message: `Missing data: plate` }); return }
-      if (!parameter.officialEmail) {
-        reject({ response: -1, message: `Missing data: officialEmail` });
-        return;
-      }
+      // if (!parameter.officialEmail) {
+      //   reject({ response: -1, message: `Missing data: officialEmail` });
+      //   return;
+      // }
       const db = admin.firestore();
       let hqRef = db.collection("headquarters").doc(parameter.hqId);
       hqRef
@@ -453,6 +453,11 @@ module.exports.checkParking = (parameter) => {
                 (reserve) =>
                   reserve.verificationCode === parameter.verificationCode
               );
+            else if (!parameter.plate)
+              currentReserve = reservations.find(
+                (reserve) =>
+                  reserve.phone === parameter.phone
+              );
             if (currentReserve) {
               if (currentReserve.prepayFullDay) {
                 currentReserve.total = 0;
@@ -475,11 +480,11 @@ module.exports.checkParking = (parameter) => {
               currentReserve.dateStart = currentReserve.dateStart.toDate();
               if (!currentReserve.mensuality) {
                 let minutes = diff.asMinutes();
-                let days = diff.asDays() - 1;
-                if (days > 1) {
-                  days -= 1;
-                  hours -= 24;
-                }
+                let days = diff.asDays();
+                // if (days > 1) {
+                //   days -= 1;
+                //   hours -= 24;
+                // }
                 let dailyPrice = 0;
                 let hoursPrice = 0;
                 let fractionPrice = 0;
@@ -548,7 +553,7 @@ module.exports.checkParking = (parameter) => {
                               hoursPrice -
                               Math.round(
                                 (hoursPrice *
-                                  parseFloat(coupon.value.bike.day)) /
+                                  parseFloat(coupon.value.bike.hours)) /
                                   100.0
                               );
                           }
@@ -557,7 +562,7 @@ module.exports.checkParking = (parameter) => {
                               fractionPrice -
                               Math.round(
                                 (fractionPrice *
-                                  parseFloat(coupon.value.bike.day)) /
+                                  parseFloat(coupon.value.bike.fraction)) /
                                   100.0
                               );
                           }
@@ -569,6 +574,7 @@ module.exports.checkParking = (parameter) => {
                     if (days >= 1) {
                       total += dailyPrice * Math.floor(days);
                       let residualHours = hours - 24 * Math.floor(days);
+                      minutes = minutes - (Math.floor(days) * 1440) 
                       total += calculateADay(
                         residualHours,
                         hoursPrice,
@@ -590,7 +596,7 @@ module.exports.checkParking = (parameter) => {
                       );
                     }
                     if (coupon) {
-                      let strTotal = String(currentReserve.total);
+                      let strTotal = String(total);
                       if (strTotal[strTotal.length - 1] === "9") {
                         currentReserve.total += 1;
                       } else {
