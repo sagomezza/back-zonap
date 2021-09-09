@@ -598,7 +598,8 @@ module.exports.checkParking = (parameter) => {
                     if (coupon) {
                       let strTotal = String(total);
                       if (strTotal[strTotal.length - 1] === "9") {
-                        currentReserve.total += 1;
+                        total += 1;
+                        currentReserve.total = total;
                       } else {
                         strTotal = strTotal.slice(0, -1) + "0";
                         currentReserve.total = Number(strTotal);
