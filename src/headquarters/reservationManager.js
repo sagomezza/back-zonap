@@ -22,7 +22,8 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+      TargetArn:
+        "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -199,10 +200,9 @@ module.exports.startParking = (parameter) => {
                 }
               }
               const code = Number(
-                String(Math.floor(Math.random() * parameter.phone.substr(7,14))).substr(
-                  0,
-                  7
-                )
+                String(
+                  Math.floor(Math.random() * parameter.phone.substr(7, 14))
+                ).substr(0, 7)
               );
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
@@ -380,18 +380,24 @@ const calculateADay = (
   dailyPrice,
   fractionPrice,
   diff,
-  minutes
+  minutes,
+  days
 ) => {
   let total = 0;
-  if (hours * hoursPrice >= dailyPrice) total += dailyPrice;
+  if (
+    Math.floor(hours) * hoursPrice +
+      (diff.minutes() >= 31 ? hoursPrice : fractionPrice) >=
+    dailyPrice
+  )
+    total += dailyPrice;
   else if (hours >= 1) {
     total += Math.floor(hours) * hoursPrice;
-    if (diff.minutes() >= 0 && diff.minutes() <= 30 && hours < 1)
+    if (diff.minutes() >= 0 && diff.minutes() < 31)
       total += fractionPrice;
-    else if (diff.minutes() > 31) total += hoursPrice;
+    else if (diff.minutes() >= 31) total += hoursPrice;
   } else {
-    if (minutes <= 5 && minutes >= 0 && hours < 1) total += 0;
-    else if (minutes > 5 && minutes <= 30 && hours < 1) total += fractionPrice;
+    if (minutes <= 5 && minutes >= 0 && hours < 1 && days < 1) total += 0;
+    else if ((minutes > 5 && minutes < 31 && hours < 1) || (days >= 1 && minutes < 31)) total += fractionPrice;
     else total += hoursPrice;
   }
   return total;
@@ -414,10 +420,10 @@ module.exports.checkParking = (parameter) => {
         return;
       }
       // if (!parameter.plate) { reject({ response: -1, message: `Missing data: plate` }); return }
-      if (!parameter.officialEmail) {
-        reject({ response: -1, message: `Missing data: officialEmail` });
-        return;
-      }
+      // if (!parameter.officialEmail) {
+      //   reject({ response: -1, message: `Missing data: officialEmail` });
+      //   return;
+      // }
       const db = admin.firestore();
       let hqRef = db.collection("headquarters").doc(parameter.hqId);
       hqRef
@@ -447,6 +453,11 @@ module.exports.checkParking = (parameter) => {
                 (reserve) =>
                   reserve.verificationCode === parameter.verificationCode
               );
+            else if (!parameter.plate)
+              currentReserve = reservations.find(
+                (reserve) =>
+                  reserve.phone === parameter.phone
+              );
             if (currentReserve) {
               if (currentReserve.prepayFullDay) {
                 currentReserve.total = 0;
@@ -463,13 +474,17 @@ module.exports.checkParking = (parameter) => {
                 "America/Bogota"
               );
               let diff = moment.duration(dateFinished.diff(dateStart));
-              let hours = diff.asHours() - 24;
+              let hours = diff.asHours();
               currentReserve.hours = hours;
               currentReserve.officialEmail = parameter.officialEmail;
               currentReserve.dateStart = currentReserve.dateStart.toDate();
               if (!currentReserve.mensuality) {
                 let minutes = diff.asMinutes();
-                let days = diff.asDays() - 1;
+                let days = diff.asDays();
+                // if (days > 1) {
+                //   days -= 1;
+                //   hours -= 24;
+                // }
                 let dailyPrice = 0;
                 let hoursPrice = 0;
                 let fractionPrice = 0;
@@ -538,7 +553,7 @@ module.exports.checkParking = (parameter) => {
                               hoursPrice -
                               Math.round(
                                 (hoursPrice *
-                                  parseFloat(coupon.value.bike.day)) /
+                                  parseFloat(coupon.value.bike.hours)) /
                                   100.0
                               );
                           }
@@ -547,7 +562,7 @@ module.exports.checkParking = (parameter) => {
                               fractionPrice -
                               Math.round(
                                 (fractionPrice *
-                                  parseFloat(coupon.value.bike.day)) /
+                                  parseFloat(coupon.value.bike.fraction)) /
                                   100.0
                               );
                           }
@@ -559,13 +574,15 @@ module.exports.checkParking = (parameter) => {
                     if (days >= 1) {
                       total += dailyPrice * Math.floor(days);
                       let residualHours = hours - 24 * Math.floor(days);
+                      minutes = minutes - (Math.floor(days) * 1440) 
                       total += calculateADay(
                         residualHours,
                         hoursPrice,
                         dailyPrice,
                         fractionPrice,
                         diff,
-                        minutes
+                        minutes,
+                        days
                       );
                     } else {
                       total += calculateADay(
@@ -574,13 +591,15 @@ module.exports.checkParking = (parameter) => {
                         dailyPrice,
                         fractionPrice,
                         diff,
-                        minutes
+                        minutes,
+                        days
                       );
                     }
                     if (coupon) {
-                      let strTotal = String(currentReserve.total);
+                      let strTotal = String(total);
                       if (strTotal[strTotal.length - 1] === "9") {
-                        currentReserve.total += 1;
+                        total += 1;
+                        currentReserve.total = total;
                       } else {
                         strTotal = strTotal.slice(0, -1) + "0";
                         currentReserve.total = Number(strTotal);
