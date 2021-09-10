@@ -199,11 +199,24 @@ module.exports.startParking = (parameter) => {
                   return;
                 }
               }
-              const code = Number(
-                String(
+
+              let codeStr = String(
+                Math.floor(Math.random() * parameter.phone.substr(7, 14))
+              ).substr(0, 7)
+              
+              if(codeStr.length < 6) {
+                console.log('Enter to the code fix')
+                let realLength = 6 - codeStr.length
+                let addStr = String(
                   Math.floor(Math.random() * parameter.phone.substr(7, 14))
-                ).substr(0, 7)
-              );
+                ).substr(0, realLength);
+                
+                console.log(addStr)
+                codeStr = codeStr + addStr;
+              }
+
+              const code = Number(codeStr)
+
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
                 await this.prepayFullDay(parameter)
