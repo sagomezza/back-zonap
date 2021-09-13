@@ -118,7 +118,7 @@ module.exports.startParking = (parameter) => {
                     prepayFullDayFlag = true;
                     reservation.prepayFullDay = true;
                     reservation.dateFinished = moment(
-                      reservation.dateStart.toDate()
+                      reservation.dateStart
                     )
                       .tz("America/Bogota")
                       .add(1, "days")
@@ -208,7 +208,7 @@ module.exports.startParking = (parameter) => {
                 console.log('Enter to the code fix')
                 let realLength = 6 - codeStr.length
                 let addStr = String(
-                  Math.floor(Math.random() * parameter.phone.substr(7, 14))
+                  Math.floor(Math.random() * parameter.phone.substr(2, 9))
                 ).substr(0, realLength);
                 
                 console.log(addStr)
