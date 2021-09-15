@@ -176,6 +176,9 @@ module.exports.payDebts = (parameter) => {
         reject({ response: -1, message: `Missing data: value` });
         return;
       }
+      if (!("officialEmail" in parameter)) {
+        reject({ response: -1, message: `Missing data: officialEmail` });
+      }
       if(parameter.generateRecip) {
         if (
           (!parameter.change && Number(parameter.change) !== Number(0)) ||
