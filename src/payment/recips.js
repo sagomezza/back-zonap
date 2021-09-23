@@ -6,7 +6,6 @@ const moment = require("moment-timezone");
 module.exports.createRecip = (parameter) => {
   return new Promise(async (resolve, reject) => {
     try {
-      parameter.paymentStatus = "read";
       const db = admin.firestore();
       db.collection("metadata")
         .doc(parameter.hqId)
@@ -20,6 +19,7 @@ module.exports.createRecip = (parameter) => {
             let numberId = data.recipId.numberId + 1;
             let stringId = data.recipId.stringId;
             console.log(stringId, numberId, stringId + numberId ) 
+            console.log("createRecip:")
             console.log(parameter);
             await db
               .collection("recips")

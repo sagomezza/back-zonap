@@ -118,7 +118,7 @@ module.exports.startParking = (parameter) => {
                     prepayFullDayFlag = true;
                     reservation.prepayFullDay = true;
                     reservation.dateFinished = moment(
-                      reservation.dateStart.toDate()
+                      reservation.dateStart
                     )
                       .tz("America/Bogota")
                       .add(1, "days")
@@ -208,7 +208,7 @@ module.exports.startParking = (parameter) => {
                 console.log('Enter to the code fix')
                 let realLength = 6 - codeStr.length
                 let addStr = String(
-                  Math.floor(Math.random() * parameter.phone.substr(7, 14))
+                  Math.floor(Math.random() * parameter.phone.substr(2, 9))
                 ).substr(0, realLength);
                 
                 console.log(addStr)
@@ -516,7 +516,7 @@ module.exports.checkParking = (parameter) => {
                     promotionType: "discount",
                   })
                   .then((coupons) => {
-                    let coupon;
+                    let coupon = null;
                     if (coupons.response === 1) {
                       coupon = coupons.coupons.find(
                         (coupon) =>
@@ -583,7 +583,6 @@ module.exports.checkParking = (parameter) => {
                       }
                     }
                     let total = 0;
-
                     if (days >= 1) {
                       total += dailyPrice * Math.floor(days);
                       let residualHours = hours - 24 * Math.floor(days);
@@ -608,13 +607,19 @@ module.exports.checkParking = (parameter) => {
                         days
                       );
                     }
+                    console.log(coupon);
                     if (coupon) {
                       let strTotal = String(total);
                       if (strTotal[strTotal.length - 1] === "9") {
+                        console.log('9');
                         total += 1;
                         currentReserve.total = total;
                       } else {
+                        console.log('is not 9');
+                        console.log(total);
+                        console.log(strTotal)
                         strTotal = strTotal.slice(0, -1) + "0";
+                        console.log(strTotal)
                         currentReserve.total = Number(strTotal);
                       }
                     } else currentReserve.total = total;
@@ -827,6 +832,8 @@ module.exports.finishParking = (parameter) => {
                       currentReserve.cash = parameter.cash;
                     }
                     currentReserve.paymentType = parameter.paymentType;
+                    console.log("finishParking:")
+                    console.log(currentReserve);
                     recipManager
                       .createRecip(currentReserve)
                       .then((resultRecip) => {
@@ -847,6 +854,7 @@ module.exports.finishParking = (parameter) => {
                                       plate: parameter.plate,
                                       value: currentReserve.pendingValue,
                                       generateRecip: false,
+                                      officialEmail: parameter.officialEmail,
                                     })
                                     .then((res) => {
                                       finishPay(

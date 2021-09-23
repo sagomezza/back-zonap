@@ -2,7 +2,7 @@ const express = require("express");
 let path = require("path");
 const admin = require("firebase-admin");
 var cron = require("node-cron");
-const moment  = require("moment-timezone");
+const moment = require("moment-timezone");
 require("dotenv").config({ path: path.resolve(__dirname + "/.env") });
 
 const auth = require("./leancore/token");
@@ -36,6 +36,7 @@ const boxCrud = require("./official/boxClose");
 const newsReport = require("./official/newsReport");
 const revoke_current_sessions = require("./login/revoke_current_sessions");
 const coupon = require("./promotions/coupons");
+const sms = require("./marketing/sms");
 
 const app = express();
 
@@ -54,14 +55,14 @@ app.use(
 );
 
 app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin: *");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Authorization"
+  );
   res.header("Access-Control-Allow-Credentials", true);
   res.header("Access-Control-Allow-Origin", req.headers.origin);
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With,X-HTTP-Method-Override,Content-Type,Accept,Authorization"
-  );
-  res.header("Access-Control-Allow-Origin: *");
   next();
 });
 
@@ -140,34 +141,32 @@ const recordIdempotency = (hash, response) => {
   return "hashed";
 };
 
-app.enable('trust proxy');
+app.enable("trust proxy");
 
-app.use(express.static(__dirname + '/node_modules'));
+app.use(express.static(__dirname + "/node_modules"));
 
-app.use(express.static(__dirname + '/static', { dotfiles: 'allow' }))
+app.use(express.static(__dirname + "/static", { dotfiles: "allow" }));
 
 app.get("/", (req, res) => {
   res.send("I'm okay");
 });
 
 app.get(/^\/(parkingId*)/, (req, res, next) => {
-  var userAgent = req.header('user-agent');
+  var userAgent = req.header("user-agent");
   // console.log('[userAgent] ', userAgent);
   if (/android|Android/i.test(userAgent)) {
-    res.redirect('https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US');
-  }
-  else if (/iPad|iPhone|iPod/i.test(userAgent)) {
-    res.redirect('https://apps.apple.com/co/app/zona-p/id1576261346');
-  }
-  else {
-    res.redirect('https://zonap.com/');
+    res.redirect(
+      "https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US"
+    );
+  } else if (/iPad|iPhone|iPod/i.test(userAgent)) {
+    res.redirect("https://apps.apple.com/co/app/zona-p/id1576261346");
+  } else {
+    res.redirect("https://zonap.com/");
   }
 });
 
 // ---------------------- USER LOGIN ---------------------------
-app.post("/createLoginUser", (req, res) =>
-  create_user.create_user(req, res)
-);
+app.post("/createLoginUser", (req, res) => create_user.create_user(req, res));
 
 app.post("/requestOneTimePassword", (req, res) =>
   requestOneTimePassword.request_one_time_password(req, res)
@@ -873,22 +872,30 @@ app.post("/checkCoupon", (req, res) =>
 );
 
 app.post("/deleteCoupon", (req, res) =>
-coupon
+  coupon
     .deleteCoupon(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
 
 app.post("/bulkClaimCoupon", (req, res) =>
-coupon
+  coupon
     .bulkClaimCoupon(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
 
 app.post("/getUserCoupons", (req, res) =>
-coupon
+  coupon
     .getUserCoupons(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+//---------------------MARKETING---------------------
+app.post("/massiveSMS", (req, res) =>
+  sms
+    .massiveSMS(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
