@@ -11,10 +11,10 @@ module.exports.email = (parameter) => {
         reject({ response: -1, message: "about email" });
         return;
       }
-      if (!parameter.templateData) {
-        reject({ response: -1, message: "about templateData" });
-        return;
-      }
+    //   if (!parameter.templateData) {
+    //     reject({ response: -1, message: "about templateData" });
+    //     return;
+    //   }
       if (!parameter.subject) {
         reject({ response: -1, message: "about subject" });
         return;
@@ -23,20 +23,20 @@ module.exports.email = (parameter) => {
       let template_data = {};
       if (parameter.about === "marketing") {
         sgMail.setApiKey(process.env.SENDGRIDMARKETINGKEY);
-        template_data = {
-          header: parameter.templateData.header,
-          section1: parameter.templateData.section1,
-          section2: parameter.templateData.section2,
-          section3: parameter.templateData.section3,
-        };
+        // template_data = {
+        //   header: parameter.templateData.header,
+        //   section1: parameter.templateData.section1,
+        //   section2: parameter.templateData.section2,
+        //   section3: parameter.templateData.section3,
+        // };
       } else {
         sgMail.setApiKey(process.env.SENDGRIDNOTIFICATIONKEY);
-        template_data = {
-          header: parameter.templateData.header,
-          text: parameter.templateData.text,
-          button: parameter.templateData.button,
-          link: parameter.templateData.link,
-        };
+        // template_data = {
+        //   header: parameter.templateData.header,
+        //   text: parameter.templateData.text,
+        //   button: parameter.templateData.button,
+        //   link: parameter.templateData.link,
+        // };
       }
 
       const msg = {
@@ -45,20 +45,20 @@ module.exports.email = (parameter) => {
             to: email,
             dynamic_template_data: {
               subject: parameter.subject,
-              header: template_data.header || `Hola,`,
-              text: template_data.text,
-              button: template_data.button,
-              link: template_data.link,
+            //   header: template_data.header || `Hola,`,
+            //   text: template_data.text,
+            //   button: template_data.button,
+            //   link: template_data.link,
             },
           },
         ],
         from: {
-          email: "info@bluspot.us",
-          name: parameter.about === "info" ? "Bluspot Info." : "Bluspot",
+          email: "info@zonap.com",
+          name: parameter.about === "info" ? "Zona P Info." : "Zona P",
         },
         reply_to: {
-          email: "info@bluspot.us",
-          name: "Bluspot",
+          email: "info@zonap.com",
+          name: "Zona P",
         },
         template_id:
           parameter.about === "marketing"
@@ -96,14 +96,14 @@ module.exports.massiveEmail = () => {
         reject({ response: -1, message: "about required" });
         return;
       }
-      if (!parameter.email) {
+      if (!parameter.emails) {
         reject({ response: -1, message: "about email" });
         return;
       }
-      if (!parameter.templateData) {
-        reject({ response: -1, message: "about templateData" });
-        return;
-      }
+    //   if (!parameter.templateData) {
+    //     reject({ response: -1, message: "about templateData" });
+    //     return;
+    //   }
       if (!parameter.subject) {
         reject({ response: -1, message: "about subject" });
         return;
