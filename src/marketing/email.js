@@ -42,7 +42,7 @@ module.exports.email = (parameter) => {
       const msg = {
         personalizations: [
           {
-            to: email,
+            to: parameter.email,
             dynamic_template_data: {
               subject: parameter.subject,
             //   header: template_data.header || `Hola,`,
@@ -89,7 +89,7 @@ module.exports.email = (parameter) => {
   });
 };
 
-module.exports.massiveEmail = () => {
+module.exports.massiveEmail = (parameter) => {
   return new Promise((resolve, reject) => {
     try {
       if (!parameter.about) {
@@ -109,7 +109,7 @@ module.exports.massiveEmail = () => {
         return;
       }
       let promises = [];
-      emails.forEach((email) => {
+      parameter.emails.forEach((email) => {
         promises.push(
           this.email({
             email,

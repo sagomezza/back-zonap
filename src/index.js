@@ -37,6 +37,7 @@ const newsReport = require("./official/newsReport");
 const revoke_current_sessions = require("./login/revoke_current_sessions");
 const coupon = require("./promotions/coupons");
 const sms = require("./marketing/sms");
+const email = require("./marketing/email");
 
 const app = express();
 
@@ -896,6 +897,13 @@ app.post("/getUserCoupons", (req, res) =>
 app.post("/massiveSMS", (req, res) =>
   sms
     .massiveSMS(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+app.post("/massiveEmail", (req, res) =>
+  email
+    .massiveEmail(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
