@@ -11,6 +11,8 @@ const blCrud = require("./blackList");
 const stripeController = require("../payment/stripeController");
 const coupons = require("../promotions/coupons");
 
+const formatMoney = require("../utils/formatMoney");
+
 const sns = new SNS({
   apiVersion: "2010-03-31",
   accessKeyId: process.env.AWSACCESSKEY,
@@ -22,8 +24,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn:
-        "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -117,9 +118,7 @@ module.exports.startParking = (parameter) => {
                   if (parameter.prepayFullDay) {
                     prepayFullDayFlag = true;
                     reservation.prepayFullDay = true;
-                    reservation.dateFinished = moment(
-                      reservation.dateStart
-                    )
+                    reservation.dateFinished = moment(reservation.dateStart)
                       .tz("America/Bogota")
                       .add(1, "days")
                       .toDate();
@@ -202,20 +201,20 @@ module.exports.startParking = (parameter) => {
 
               let codeStr = String(
                 Math.floor(Math.random() * parameter.phone.substr(7, 14))
-              ).substr(0, 7)
-              
-              if(codeStr.length < 6) {
-                console.log('Enter to the code fix')
-                let realLength = 6 - codeStr.length
+              ).substr(0, 7);
+
+              if (codeStr.length < 6) {
+                console.log("Enter to the code fix");
+                let realLength = 6 - codeStr.length;
                 let addStr = String(
                   Math.floor(Math.random() * parameter.phone.substr(2, 9))
                 ).substr(0, realLength);
-                
-                console.log(addStr)
+
+                console.log(addStr);
                 codeStr = codeStr + addStr;
               }
 
-              const code = Number(codeStr)
+              const code = Number(codeStr);
 
               parameter.verificationCode = code;
               if (parameter.prepayFullDay && !reservation) {
@@ -405,12 +404,15 @@ const calculateADay = (
     total += dailyPrice;
   else if (hours >= 1) {
     total += Math.floor(hours) * hoursPrice;
-    if (diff.minutes() >= 0 && diff.minutes() < 31)
-      total += fractionPrice;
+    if (diff.minutes() >= 0 && diff.minutes() < 31) total += fractionPrice;
     else if (diff.minutes() >= 31) total += hoursPrice;
   } else {
     if (minutes <= 5 && minutes >= 0 && hours < 1 && days < 1) total += 0;
-    else if ((minutes > 5 && minutes < 31 && hours < 1) || (days >= 1 && minutes < 31)) total += fractionPrice;
+    else if (
+      (minutes > 5 && minutes < 31 && hours < 1) ||
+      (days >= 1 && minutes < 31)
+    )
+      total += fractionPrice;
     else total += hoursPrice;
   }
   return total;
@@ -468,8 +470,7 @@ module.exports.checkParking = (parameter) => {
               );
             else if (!parameter.plate)
               currentReserve = reservations.find(
-                (reserve) =>
-                  reserve.phone === parameter.phone
+                (reserve) => reserve.phone === parameter.phone
               );
             if (currentReserve) {
               if (currentReserve.prepayFullDay) {
@@ -586,7 +587,7 @@ module.exports.checkParking = (parameter) => {
                     if (days >= 1) {
                       total += dailyPrice * Math.floor(days);
                       let residualHours = hours - 24 * Math.floor(days);
-                      minutes = minutes - (Math.floor(days) * 1440) 
+                      minutes = minutes - Math.floor(days) * 1440;
                       total += calculateADay(
                         residualHours,
                         hoursPrice,
@@ -611,56 +612,61 @@ module.exports.checkParking = (parameter) => {
                     if (coupon) {
                       let strTotal = String(total);
                       if (strTotal[strTotal.length - 1] === "9") {
-                        console.log('9');
+                        console.log("9");
                         total += 1;
                         currentReserve.total = total;
                       } else {
-                        console.log('is not 9');
+                        console.log("is not 9");
                         console.log(total);
-                        console.log(strTotal)
+                        console.log(strTotal);
                         strTotal = strTotal.slice(0, -1) + "0";
-                        console.log(strTotal)
+                        console.log(strTotal);
                         currentReserve.total = Number(strTotal);
                       }
                     } else currentReserve.total = total;
-                    blCrud
-                      .readBlackList({
-                        hqId: parameter.hqId,
-                        plate: currentReserve.plate,
-                      })
-                      .then((result) => {
-                        try {
-                          if (result.response === 1) {
-                            currentReserve.pendingValue = result.data.value;
-                            currentReserve.valuePark = total;
-                            currentReserve.total += result.data.value;
-                            resolve({
-                              response: 1,
-                              message: `Parking data calculated`,
-                              data: currentReserve,
-                              recipIds: result.data.recipIds,
-                            });
-                          } else {
-                            resolve({
-                              response: 1,
-                              message: `Parking data calculated`,
-                              data: currentReserve,
-                            });
-                          }
-                        } catch (err) {
-                          console.log(err);
-                          reject(err);
-                        }
-                      })
-                      .catch((err) => {
-                        if (err.response === -2)
-                          resolve({
-                            response: 1,
-                            message: `Parking data calculated`,
-                            data: currentReserve,
-                          });
-                        else reject(err);
-                      });
+                    resolve({
+                      response: 1,
+                      message: `Parking data calculated`,
+                      data: currentReserve,
+                    });
+                    // blCrud
+                    //   .readBlackList({
+                    //     hqId: parameter.hqId,
+                    //     plate: currentReserve.plate,
+                    //   })
+                    //   .then((result) => {
+                    //     try {
+                    //       if (result.response === 1) {
+                    //         currentReserve.pendingValue = result.data.value;
+                    //         currentReserve.valuePark = currentReserve.total;
+                    //         currentReserve.total += result.data.value;
+                    //         resolve({
+                    //           response: 1,
+                    //           message: `Parking data calculated`,
+                    //           data: currentReserve,
+                    //           recipIds: result.data.recipIds,
+                    //         });
+                    //       } else {
+                    //         resolve({
+                    //           response: 1,
+                    //           message: `Parking data calculated`,
+                    //           data: currentReserve,
+                    //         });
+                    //       }
+                    //     } catch (err) {
+                    //       console.log(err);
+                    //       reject(err);
+                    //     }
+                    //   })
+                    //   .catch((err) => {
+                    //     if (err.response === -2)
+                    //       resolve({
+                    //         response: 1,
+                    //         message: `Parking data calculated`,
+                    //         data: currentReserve,
+                    //       });
+                    //     else reject(err);
+                    //   });
                   })
                   .catch((err) => {
                     console.log(err);
@@ -832,80 +838,67 @@ module.exports.finishParking = (parameter) => {
                       currentReserve.cash = parameter.cash;
                     }
                     currentReserve.paymentType = parameter.paymentType;
-                    console.log("finishParking:")
+                    console.log("finishParking:");
                     console.log(currentReserve);
                     recipManager
                       .createRecip(currentReserve)
                       .then((resultRecip) => {
                         try {
-                          recipManager
-                            .readRecip({ recipId: resultRecip.id })
-                            .then((recipCreated) => {
-                              try {
-                                let recipData = recipCreated.data;
-                                parameter.recipId = resultRecip.id;
-                                if (
-                                  currentReserve.pendingValue &&
-                                  parameter.cash > currentReserve.total
-                                ) {
-                                  blCrud
-                                    .payDebts({
-                                      hqId: parameter.hqId,
-                                      plate: parameter.plate,
-                                      value: currentReserve.pendingValue,
-                                      generateRecip: false,
-                                      officialEmail: parameter.officialEmail,
-                                    })
-                                    .then((res) => {
-                                      finishPay(
-                                        parameter,
-                                        currentReserve,
-                                        docData,
-                                        recipData,
-                                        hqRef
-                                      )
-                                        .then((resultPay) => {
-                                          resolve(resultPay);
-                                          return;
-                                        })
-                                        .catch((err) => {
-                                          console.log(err);
-                                          reject(err);
-                                          return;
-                                        });
-                                    })
-                                    .catch((err) => {
-                                      console.log("line 472");
-                                      console.log(err);
-                                      reject(err);
-                                    });
-                                } else {
-                                  finishPay(
-                                    parameter,
-                                    currentReserve,
-                                    docData,
-                                    recipData,
-                                    hqRef
-                                  )
-                                    .then((result) => {
-                                      resolve(result);
-                                      return;
-                                    })
-                                    .catch((err) => {
-                                      console.log(err);
-                                      reject(err);
-                                      return;
-                                    });
-                                }
-                              } catch (err) {
+                          let recipData = resultRecip.data;
+                          parameter.recipId = resultRecip.id;
+                          // if (
+                          //   currentReserve.pendingValue &&
+                          //   parameter.cash > currentReserve.total
+                          // ) {
+                          //   blCrud
+                          //     .payDebts({
+                          //       hqId: parameter.hqId,
+                          //       plate: parameter.plate,
+                          //       value: currentReserve.pendingValue,
+                          //       generateRecip: false,
+                          //       officialEmail: parameter.officialEmail,
+                          //     })
+                          //     .then((res) => {
+                          //       finishPay(
+                          //         parameter,
+                          //         currentReserve,
+                          //         docData,
+                          //         recipData,
+                          //         hqRef
+                          //       )
+                          //         .then((resultPay) => {
+                          //           resolve(resultPay);
+                          //           return;
+                          //         })
+                          //         .catch((err) => {
+                          //           console.log(err);
+                          //           reject(err);
+                          //           return;
+                          //         });
+                          //     })
+                          //     .catch((err) => {
+                          //       console.log("line 472");
+                          //       console.log(err);
+                          //       reject(err);
+                          //     });
+                          // } else {
+                            finishPay(
+                              parameter,
+                              currentReserve,
+                              docData,
+                              recipData,
+                              hqRef
+                            )
+                              .then((result) => {
+                                resolve(result);
+                                return;
+                              })
+                              .catch((err) => {
                                 console.log(err);
                                 reject(err);
-                              }
-                            })
-                            .catch((err) => {
-                              console.log(err);
-                              reject(err);
-                            });
+                                return;
+                              });
+                          //}
                         } catch (err) {
                           console.log(err);
                           reject(err);
@@ -1073,11 +1066,14 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                     },
                   },
                 };
-              else if (parameter.status === "pending") {
+              else if (
+                parameter.status === "pending" ||
+                parameter.status === "parcial-pending"
+              ) {
                 params = {
-                  Message: `¡Hola tu saldo pendiente es: $${
-                    currentReserve.change * -1
-                  } `,
+                  Message: `¡Hola tu saldo pendiente es: $${formatMoney.numberWithPoints(
+                    parameter.change * -1
+                  )} `,
                   PhoneNumber: parameter.phone,
                   MessageAttributes: {
                     "AWS.SNS.SMS.SMSType": {
@@ -1305,88 +1301,73 @@ module.exports.prepayFullDay = (parameter, reservation) => {
               currentReserve.dateFinished = dateFinished;
               recipManager
                 .createRecip(currentReserve)
-                .then((resultRecip) => {
-                  recipManager
-                    .readRecip({ recipId: resultRecip.id })
-                    .then(async (recipCreated) => {
-                      let data = recipCreated.data;
-                      data.dateStart = data.dateStart.nanoseconds
-                        ? data.dateStart.toDate()
-                        : data.dateStart;
-                      data.dateFinished = data.dateFinished.nanoseconds
-                        ? data.dateFinished.toDate()
-                        : data.dateFinished;
-                      if (!parameter.isParanoic) {
-                        const params = {
-                          Message: `¡Hola! Tu código Zona P es: (${code}). Hora: ${
+                .then(async (resultRecip) => {
+                  let data = resultRecip.data;
+                  data.dateStart = data.dateStart.nanoseconds
+                    ? data.dateStart.toDate()
+                    : data.dateStart;
+                  data.dateFinished = data.dateFinished.nanoseconds
+                    ? data.dateFinished.toDate()
+                    : data.dateFinished;
+                  if (!parameter.isParanoic) {
+                    const params = {
+                      Message: `¡Hola! Tu código Zona P es: (${code}). Hora: ${
+                        moment(data.dateStart).tz("America/Bogota").hours() -
+                          12 >
+                        0
+                          ? moment(data.dateStart)
+                              .tz("America/Bogota")
+                              .hours() - 12
+                          : moment(data.dateStart).tz("America/Bogota").hours()
+                      }:${
+                        moment(data.dateStart).tz("America/Bogota").minutes() <
+                        10
+                          ? "0" +
                             moment(data.dateStart)
                               .tz("America/Bogota")
-                              .hours() -
-                              12 >
-                            0
-                              ? moment(data.dateStart)
-                                  .tz("America/Bogota")
-                                  .hours() - 12
-                              : moment(data.dateStart)
-                                  .tz("America/Bogota")
-                                  .hours()
-                          }:${
-                            moment(data.dateStart)
+                              .minutes()
+                          : moment(data.dateStart)
                               .tz("America/Bogota")
-                              .minutes() < 10
-                              ? "0" +
-                                moment(data.dateStart)
-                                  .tz("America/Bogota")
-                                  .minutes()
-                              : moment(data.dateStart)
-                                  .tz("America/Bogota")
-                                  .minutes()
-                          } ${
-                            moment(data.dateStart)
-                              .tz("America/Bogota")
-                              .hours() -
-                              12 >
-                            0
-                              ? "PM"
-                              : "AM"
-                          }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
-                            resultRecip.id
-                          } Más información: https://bit.ly/3rQeKDM`,
-                          PhoneNumber: parameter.phone,
-                          MessageAttributes: {
-                            "AWS.SNS.SMS.SMSType": {
-                              DataType: "String",
-                              StringValue: "Transactional",
-                            },
-                          },
-                        };
-                        sns.publish(params, (err, data) => {
-                          if (err) {
-                            console.log("publish[ERR] ", err, err.stack);
-                            return reject(err);
-                          }
-                          console.log("publish[data] ", data);
-                          resolve({
-                            response: 1,
-                            message: `The user ${parameter.plate} started succesfully the parking time`,
-                          });
-                        });
-                      } else {
-                        const db = admin.firestore();
-                        let paranoicRef = db
-                          .collection("paranoics")
-                          .doc(parameter.phone);
-                        await paranoicRef.update({ plate: parameter.plate });
-                        resolve({
-                          response: 1,
-                          message: `The user ${parameter.plate} started succesfully the parking time`,
-                        });
+                              .minutes()
+                      } ${
+                        moment(data.dateStart).tz("America/Bogota").hours() -
+                          12 >
+                        0
+                          ? "PM"
+                          : "AM"
+                      }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
+                        resultRecip.id
+                      } Más información: https://bit.ly/3rQeKDM`,
+                      PhoneNumber: parameter.phone,
+                      MessageAttributes: {
+                        "AWS.SNS.SMS.SMSType": {
+                          DataType: "String",
+                          StringValue: "Transactional",
+                        },
+                      },
+                    };
+                    sns.publish(params, (err, data) => {
+                      if (err) {
+                        console.log("publish[ERR] ", err, err.stack);
+                        return reject(err);
                       }
-                    })
-                    .catch((err) => {
-                      console.log(err);
-                      reject(err);
+                      console.log("publish[data] ", data);
+                      resolve({
+                        response: 1,
+                        message: `The user ${parameter.plate} started succesfully the parking time`,
+                      });
                     });
+                  } else {
+                    const db = admin.firestore();
+                    let paranoicRef = db
+                      .collection("paranoics")
+                      .doc(parameter.phone);
+                    await paranoicRef.update({ plate: parameter.plate });
+                    resolve({
+                      response: 1,
+                      message: `The user ${parameter.plate} started succesfully the parking time`,
+                    });
+                  }
                 })
                 .catch((err) => {
                   console.log(err);
@@ -2005,14 +1986,3 @@ module.exports.checkUserParkingTotal = (parameter) => {
     }
   });
 };
-
-// module.exports.migrateParkedList = () => {
-//   const db = admin.firestore();
-//   db.collection("mensualities")
-//   .get()
-//   .then(snapshot => {
-//     snapshot.forEach(async (doc) => {
-//       await db.collection("mensualities").doc(doc.id).update({parkedPlatesList: []})
-//     })
-//   })
-// }

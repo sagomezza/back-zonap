@@ -474,22 +474,3 @@ module.exports.getShiftsOfBox = (parameter) => {
       });
   });
 };
-
-// module.exports.migrateShift = () => {
-//     return new Promise((resolve, reject)=> {
-//         const db = admin.firestore();
-//         db.collection("shiftReports")
-//         .get()
-//         .then(snapshot => {
-//             snapshot.forEach(async (doc) => {
-//                 let id = Number(doc.id)
-//                 if(id > 1034)  {
-//                     let data = doc.data()
-//                     id  -= 1
-//                     await db.collection("shiftReports").doc(id +"").set(data)
-//                 }
-//             })
-//         })
-
-//     })
-// }

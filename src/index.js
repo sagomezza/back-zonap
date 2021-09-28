@@ -87,23 +87,6 @@ admin.firestore().settings({
 
 //auth.authLeanCore()
 
-// recips.migrateRecips().then(res=> console.log(res))
-//    push.sendSMS()
-//  recips.check().then(res=> console.log(res))
-// shiftManager.migrateShift()
-// .then()
-// userCrud.usersCount()
-// userCrud.countMensualities()
-// reservationManager.migrateParkedList()
-// recips.countTransactions()
-// .then(res => console.log(res))
-
-//recips.migratePrepayFullDay().then(res=> console.log(res))
-
-// userCrud.migrateBalance()
-// .then(result => console.log(result))
-// .catch(err => console.log(err) )
-console.log(moment().format("YYYY-MM-DD HH:mm:ss"));
 var task = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
