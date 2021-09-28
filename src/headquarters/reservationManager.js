@@ -845,7 +845,7 @@ module.exports.finishParking = (parameter) => {
                       .then((resultRecip) => {
                         try {
                           let recipData = resultRecip.data;
-                          parameter.recipId = resultRecip.id;
+                          parameter.recipId = resultRecip.data.id;
                           // if (
                           //   currentReserve.pendingValue &&
                           //   parameter.cash > currentReserve.total
@@ -950,7 +950,7 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
       parameter.mensuality = currentReserve.mensuality;
       const db = admin.firestore();
       pay
-        .pay(parameter)
+        .pay(parameter, recipData)
         .then(async (result) => {
           try {
             if (docData.reservations.length === 0) {
