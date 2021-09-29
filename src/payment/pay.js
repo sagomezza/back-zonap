@@ -2,7 +2,7 @@ const recip = require("./recips");
 const stripeController = require("./stripeController");
 const blCrud = require("../headquarters/blackList");
 
-module.exports.pay = (parameter) => {
+module.exports.pay = (parameter, recipData) => {
   return new Promise((resolve, reject) => {
     try {
       console.log(parameter);
@@ -52,69 +52,61 @@ module.exports.pay = (parameter) => {
               return;
             });
         } else {
-          recip
-            .readRecip({ recipId: parameter.recipId })
-            .then((resultRecip) => {
-              try {
-                if (parameter.paymentType === "cash") {
-                  if (!parameter.cash && Number(parameter.cash) !== Number(0)) {
-                    reject({ response: -1, message: `Missing data: cash` });
-                    return;
-                  }
-                  if (
-                    !parameter.change &&
-                    Number(parameter.change) !== Number(0)
-                  ) {
-                    reject({ response: -1, message: `Missing data: change` });
-                    return;
-                  }
+          try {
+            if (parameter.paymentType === "cash") {
+              if (!parameter.cash && Number(parameter.cash) !== Number(0)) {
+                reject({ response: -1, message: `Missing data: cash` });
+                return;
+              }
+              if (!parameter.change && Number(parameter.change) !== Number(0)) {
+                reject({ response: -1, message: `Missing data: change` });
+                return;
+              }
+              recip
+                .changeRecipStatus({
+                  id: parameter.recipId,
+                  paymentStatus: parameter.status,
+                  status: "read",
+                  paymentType: parameter.paymentType,
+                  cash: parameter.cash,
+                  change: parameter.change,
+                })
+                .then((result) => {
+                  resolve({
+                    response: 1,
+                    message: `Cash payment registered`,
+                  });
+                  return;
+                })
+                .catch((err) => reject(err));
+            } else if (parameter.paymentType === "cc") {
+              stripeController
+                .chargeStripeUser({
+                  phone: recipData.phone,
+                  amount: recipData.total,
+                })
+                .then((resultPay) => {
                   recip
                     .changeRecipStatus({
-                      id: parameter.recipId,
                       paymentStatus: parameter.status,
                       status: "read",
-                      paymentType: parameter.paymentType,
-                      cash: parameter.cash,
-                      change: parameter.change,
+                      paymentType,
                     })
                     .then((result) => {
                       resolve({
                         response: 1,
-                        message: `Cash payment registered`,
+                        message: `Credit card payment registered`,
                       });
                       return;
                     })
                     .catch((err) => reject(err));
-                } else if (parameter.paymentType === "cc") {
-                  stripeController
-                    .chargeStripeUser({
-                      phone: resultRecip.data.phone,
-                      amount: resultRecip.data.total,
-                    })
-                    .then((resultPay) => {
-                      recip
-                        .changeRecipStatus({
-                          paymentStatus: parameter.status,
-                          status: "read",
-                          paymentType,
-                        })
-                        .then((result) => {
-                          resolve({
-                            response: 1,
-                            message: `Credit card payment registered`,
-                          });
-                          return;
-                        })
-                        .catch((err) => reject(err));
-                    })
-                    .catch((err) => reject(err));
-                }
-              } catch (err) {
-                console.log(err);
-                reject(err);
-              }
-            })
-            .catch((err) => reject(err));
+                })
+                .catch((err) => reject(err));
+            }
+          } catch (err) {
+            console.log(err);
+            reject(err);
+          }
         }
       }
     } catch (err) {

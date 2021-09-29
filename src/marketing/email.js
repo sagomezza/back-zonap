@@ -97,7 +97,7 @@ module.exports.massiveEmail = (parameter) => {
         return;
       }
       if (!parameter.emails) {
-        reject({ response: -1, message: "about email" });
+        reject({ response: -1, message: "email required" });
         return;
       }
     //   if (!parameter.templateData) {
@@ -105,7 +105,7 @@ module.exports.massiveEmail = (parameter) => {
     //     return;
     //   }
       if (!parameter.subject) {
-        reject({ response: -1, message: "about subject" });
+        reject({ response: -1, message: "subject required" });
         return;
       }
       let promises = [];

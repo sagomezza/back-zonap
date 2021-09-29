@@ -15,7 +15,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -238,7 +238,7 @@ module.exports.payDebts = (parameter) => {
                     .doc(res.data.id)
                     .update({
                       recipIds: admin.firestore.FieldValue.arrayUnion(
-                        resRecip.id
+                        resRecip.data.id
                       ),
                     });
                   const params = {
