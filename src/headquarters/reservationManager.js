@@ -1336,7 +1336,7 @@ module.exports.prepayFullDay = (parameter, reservation) => {
                           ? "PM"
                           : "AM"
                       }. Recibo: https://tinyurl.com/bur82ydc/?rid=${
-                        resultRecip.id
+                        resultRecip.data.id
                       } Más información: https://bit.ly/3rQeKDM`,
                       PhoneNumber: parameter.phone,
                       MessageAttributes: {

@@ -238,7 +238,7 @@ module.exports.payDebts = (parameter) => {
                     .doc(res.data.id)
                     .update({
                       recipIds: admin.firestore.FieldValue.arrayUnion(
-                        resRecip.id
+                        resRecip.data.id
                       ),
                     });
                   const params = {
