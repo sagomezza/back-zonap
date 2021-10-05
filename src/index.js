@@ -136,16 +136,21 @@ app.get("/", (req, res) => {
 });
 
 app.get(/^\/(parkingId*)/, (req, res, next) => {
-  var userAgent = req.header("user-agent");
+  var userAgent = req.header('user-agent');
   // console.log('[userAgent] ', userAgent);
-  if (/android|Android/i.test(userAgent)) {
-    res.redirect(
-      "https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US"
-    );
-  } else if (/iPad|iPhone|iPod/i.test(userAgent)) {
-    res.redirect("https://apps.apple.com/co/app/zona-p/id1576261346");
+  // if (/android|Android/i.test(userAgent)) {
+  //   res.redirect('https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US');
+  // }
+  // else if (/iPad|iPhone|iPod/i.test(userAgent)) {
+  //   res.redirect('https://apps.apple.com/co/app/zona-p/id1576261346');
+  // }
+  // else {
+  //   res.redirect('https://zonap.com/');
+  // }
+  if (process.env.ENVIRONMENT === "test") {
+    res.redirect(`https://checkinzonap.leancore.co`)
   } else {
-    res.redirect("https://zonap.com/");
+    res.redirect(`https://checkinzonap.leancore.co`)
   }
 });
 
