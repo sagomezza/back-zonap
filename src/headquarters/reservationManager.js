@@ -202,7 +202,7 @@ module.exports.startParking = (parameter) => {
               let codeStr = String(
                 Math.floor(Math.random() * parameter.phone.substr(7, 14))
               ).substr(0, 7);
-
+              console.log(codeStr)
               if (codeStr.length < 6) {
                 console.log("Enter to the code fix");
                 let realLength = 6 - codeStr.length;
@@ -458,6 +458,7 @@ module.exports.checkParking = (parameter) => {
               });
               return;
             }
+            console.log(parameter)
             let currentReserve;
             if (parameter.plate)
               currentReserve = reservations.find(
@@ -1067,8 +1068,8 @@ const finishPay = (parameter, currentReserve, docData, recipData, hqRef) => {
                   },
                 };
               else if (
-                parameter.status === "pending" ||
-                parameter.status === "parcial-pending"
+                (parameter.status === "pending" ||
+                parameter.status === "parcial-pending")
               ) {
                 params = {
                   Message: `¡Hola tu saldo pendiente es: $${formatMoney.numberWithPoints(
