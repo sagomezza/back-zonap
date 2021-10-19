@@ -916,3 +916,10 @@ app.post("/wompiRequestPaymentURL", (req, res) =>
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+
+app.post("/wompiResponse", (req, res) =>
+  wompi
+    .wompiResponse(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
