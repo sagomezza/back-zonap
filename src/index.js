@@ -38,7 +38,7 @@ const revoke_current_sessions = require("./login/revoke_current_sessions");
 const coupon = require("./promotions/coupons");
 const sms = require("./marketing/sms");
 const email = require("./marketing/email");
-
+const wompi = require("./payment/wompi");
 const app = express();
 
 app.use(
@@ -87,7 +87,7 @@ admin.firestore().settings({
 
 //auth.authLeanCore()
 
-var task = cron.schedule("*/3 * * * * *", function () {
+const recurrentTask = cron.schedule("*/3 * * * * *", function () {
   crons
     .endPrepayed()
     .then((res) => {
@@ -96,7 +96,7 @@ var task = cron.schedule("*/3 * * * * *", function () {
     .catch((err) => console.log(err));
 });
 
-var dailyTask = cron.schedule("0 5 6 * *", function () {
+const dueMonthlyTasks = cron.schedule("0 5 6 * *", function () {
   crons
     .dueMensualities()
     .then((res) => {
@@ -112,8 +112,18 @@ var dailyTask = cron.schedule("0 5 6 * *", function () {
     .catch((err) => console.log(err));
 });
 
-task.start();
-dailyTask.start();
+const paymentMonthlyTasks = cron.schedule("0 0 1 * *", function () {
+  crons
+    .wompiPay()
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => console.log(err));
+});
+
+recurrentTask.start();
+dueMonthlyTasks.start();
+paymentMonthlyTasks.start();
 
 let hashCache = {};
 
@@ -136,7 +146,7 @@ app.get("/", (req, res) => {
 });
 
 app.get(/^\/(parkingId*)/, (req, res, next) => {
-  var userAgent = req.header('user-agent');
+  var userAgent = req.header("user-agent");
   // console.log('[userAgent] ', userAgent);
   // if (/android|Android/i.test(userAgent)) {
   //   res.redirect('https://play.google.com/store/apps/details?id=com.parkingpayments&hl=es_CO&gl=US');
@@ -148,9 +158,9 @@ app.get(/^\/(parkingId*)/, (req, res, next) => {
   //   res.redirect('https://zonap.com/');
   // }
   if (process.env.ENVIRONMENT === "test") {
-    res.redirect(`https://checkinzonap.leancore.co`)
+    res.redirect(`https://checkinzonap.leancore.co`);
   } else {
-    res.redirect(`https://checkinzonap.leancore.co`)
+    res.redirect(`https://checkinzonap.leancore.co`);
   }
 });
 
@@ -720,11 +730,13 @@ app.post("/renewMensuality", (req, res) => {
 });
 
 // ---------------------- BLACKLIST ---------------------------
-// app.post('/createBlackList', (req, res) =>
-//     blackListCrud.createBlackList(req.body)
-//         .then(result => res.send(result))
-//         .catch(err => res.status(422).send(err))
-// }));
+app.post("/createBlackList", (req, res) =>
+  blackListCrud
+    .createBlackList(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
 app.post("/readBlackList", (req, res) =>
   blackListCrud
     .readBlackList(req.body)
@@ -739,11 +751,12 @@ app.post("/payDebts", (req, res) =>
     .catch((err) => res.status(422).send(err))
 );
 
-// app.post('/blackListForPlate', (req, res) =>
-//     blackListCrud.blackListForPlate(req.body)
-//         .then(result => res.send(result))
-//         .catch(err => res.status(422).send(err))
-// }));
+app.post("/blackListForPlate", (req, res) =>
+  blackListCrud
+    .blackListForPlate(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
 
 app.post("/listHQDebts", (req, res) =>
   blackListCrud
@@ -892,6 +905,14 @@ app.post("/massiveSMS", (req, res) =>
 app.post("/massiveEmail", (req, res) =>
   email
     .massiveEmail(req.body)
+    .then((result) => res.send(result))
+    .catch((err) => res.status(422).send(err))
+);
+
+//---------------------WOMPI---------------------
+app.post("/wompiRequestPaymentURL", (req, res) =>
+  wompi
+    .wompiRequestPaymentURL(req.body)
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
