@@ -2,7 +2,6 @@ const admin = require("firebase-admin");
 const moment = require("moment-timezone");
 const wompi = require("../payment/wompi");
 const sms = require("../marketing/sms");
-const utils = require("../utils/groupBy");
 const _ = require("lodash");
 moment().tz("America/Bogota").format();
 
