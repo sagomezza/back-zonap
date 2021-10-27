@@ -15,7 +15,7 @@ sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
-      TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
     },
   },
   function (error) {
@@ -88,9 +88,10 @@ module.exports.createBlackList = (parameter) => {
                 console.log(err);
                 if (err.response && err.response === -2) {
                   parameter.recipIds = [parameter.recipId];
-                  if (parameter.userPhone.startsWith("+57"))
+                  if (parameter.userPhone.startsWith("+57")) {
                     parameter.userPhones = [parameter.userPhone];
-                  delete parameter.userPhone;
+                    delete parameter.userPhone;
+                  }
                   parameter.status = "active";
                   parameter.date = moment().tz("America-Bogota");
                   let blRef = await db.collection("blacklist").add(parameter);
@@ -176,7 +177,10 @@ module.exports.payDebts = (parameter) => {
         reject({ response: -1, message: `Missing data: value` });
         return;
       }
-      if(parameter.generateRecip) {
+      // if (!("officialEmail" in parameter)) {
+      //   reject({ response: -1, message: `Missing data: officialEmail` });
+      // }
+      if (parameter.generateRecip) {
         if (
           (!parameter.change && Number(parameter.change) !== Number(0)) ||
           parameter.change === null
@@ -199,6 +203,7 @@ module.exports.payDebts = (parameter) => {
               reject({ response: -2, message: "This debt is already paid" });
               return;
             }
+            const blId = res.data.id;
             const dateFactured = moment().tz("America/Bogota");
             const db = admin.firestore();
             let data = {};
@@ -208,7 +213,7 @@ module.exports.payDebts = (parameter) => {
             } else {
               data.value = res.data.value - parameter.value;
             }
-            await db.collection("blacklist").doc(res.data.id).update(data);
+            await db.collection("blacklist").doc(blId).update(data);
             if (parameter.generateRecip) {
               let vehicleType =
                 /[a-zA-Z]/.test(res.data.plate[5]) ||
@@ -218,61 +223,72 @@ module.exports.payDebts = (parameter) => {
               let reciData = {
                 hqId: res.data.hqId,
                 plate: res.data.plate,
-                phone: res.data.userPhones[0],
                 total: data.value > 0 ? data.value : parameter.value,
-                officialEmail: parameter.officialEmail,
                 dateFactured: dateFactured.toDate(),
                 blackList: true,
                 type: vehicleType,
                 cash: parameter.cash,
                 change: parameter.change,
               };
+              if(parameter.officialEmail) reciData.officialEmail = parameter.officialEmail; 
+              if(res?.data?.userPhones?.length) reciData.userPhones = res.data.userPhones[0];
+              else reciData.userPhones = "Usuario de tarjeta";
               recipManager
                 .createRecip(reciData)
                 .then(async (resRecip) => {
+                  try {
+                  const recipId = resRecip.data.id;
                   await db
                     .collection("blacklist")
-                    .doc(res.data.id)
+                    .doc(blId)
                     .update({
-                      recipIds: admin.firestore.FieldValue.arrayUnion(
-                        resRecip.id
-                      ),
+                      recipIds: admin.firestore.FieldValue.arrayUnion(recipId),
                     });
-                  const params = {
-                    Message: `Deuda pagada a las ${
-                      dateFactured.hours() - 12 > 0
-                        ? dateFactured.hours() - 12
-                        : dateFactured.hours()
-                    }:${
-                      dateFactured.minutes() < 10
-                        ? "0" + dateFactured.minutes()
-                        : dateFactured.minutes()
-                    } ${
-                      dateFactured.hours() - 12 > 0 ? "PM" : "AM"
-                    }. ${"\n"} Recibo: https://tinyurl.com/bur82ydc?rid=${
-                      resRecip.id
-                    }`,
-                    PhoneNumber: res.data.userPhones[0],
-                    MessageAttributes: {
-                      "AWS.SNS.SMS.SMSType": {
-                        DataType: "String",
-                        StringValue: "Transactional",
+                    console.log(reciData.userPhone)
+                    console.log(reciData.userPhone && reciData.userPhone !== "")
+                  if (reciData.userPhone && reciData.userPhone !== "") {
+                    const params = {
+                      Message: `Deuda pagada a las ${
+                        dateFactured.hours() - 12 > 0
+                          ? dateFactured.hours() - 12
+                          : dateFactured.hours()
+                      }:${
+                        dateFactured.minutes() < 10
+                          ? "0" + dateFactured.minutes()
+                          : dateFactured.minutes()
+                      } ${
+                        dateFactured.hours() - 12 > 0 ? "PM" : "AM"
+                      }. ${"\n"} Recibo: https://tinyurl.com/bur82ydc?rid=${
+                        resRecip.id
+                      }`,
+                      PhoneNumber: res.data.userPhones[0],
+                      MessageAttributes: {
+                        "AWS.SNS.SMS.SMSType": {
+                          DataType: "String",
+                          StringValue: "Transactional",
+                        },
                       },
-                    },
-                  };
-                  sns.publish(params, (err, data) => {
-                    if (err) {
-                      console.log("publish[ERR] ", err, err.stack);
-                      return reject(err);
-                    }
-                    console.log("publish[data] ", data);
-                    resolve({ response: 1, message: `BL payed` });
-                  });
+                    };
+                    sns.publish(params, (err, data) => {
+                      if (err) {
+                        console.log("publish[ERR] ", err, err.stack);
+                        return reject(err);
+                      }
+                      console.log("publish[data] ", data);
+                      resolve({ response: 1, message: `BL payed` });
+                    });
+                  } else resolve({ response: 1, message: `BL payed` });
+                } catch(err) {
+                  console.log(err)
+                  reject(err);
+                }
                 })
                 .catch((err) => {
                   console.log(err);
                   reject(err);
                 });
+            } else {
+              resolve({ response: 1, message: `BL payed. NOTE: Recip was not generated` });
             }
           } catch (err) {
             console.log(err);
@@ -339,11 +355,9 @@ module.exports.blackListForPlate = (parameter) => {
       return;
     }
     const db = admin.firestore();
-    let blRef = db
-      .collection("blacklist")
+    db.collection("blacklist")
       .where("plate", "==", parameter.plate)
-      .where("status", "==", "active");
-    blRef
+      .where("status", "==", "active")
       .get()
       .then((snapshot) => {
         if (snapshot.empty) {

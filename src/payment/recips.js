@@ -6,7 +6,6 @@ const moment = require("moment-timezone");
 module.exports.createRecip = (parameter) => {
   return new Promise(async (resolve, reject) => {
     try {
-      parameter.paymentStatus = "read";
       const db = admin.firestore();
       db.collection("metadata")
         .doc(parameter.hqId)
@@ -19,7 +18,8 @@ module.exports.createRecip = (parameter) => {
             let data = doc.data();
             let numberId = data.recipId.numberId + 1;
             let stringId = data.recipId.stringId;
-            console.log(stringId, numberId, stringId + numberId ) 
+            console.log(stringId, numberId, stringId + numberId);
+            console.log("createRecip:");
             console.log(parameter);
             await db
               .collection("recips")
@@ -32,7 +32,7 @@ module.exports.createRecip = (parameter) => {
             resolve({
               response: 1,
               message: `Recip created succesfully`,
-              id: stringId + numberId,
+              data: { id: stringId + numberId, ...parameter },
             });
           } catch (err) {
             console.log(err);
@@ -74,11 +74,11 @@ module.exports.getRecips = (parameter) => {
       let recipRef = db.collection("recips");
       if (parameter.hqId) {
         officialCrud
-          .readOfficial({ email: parameter.officialEmail})
+          .readOfficial({ email: parameter.officialEmail })
           .then(async (officialResult) => {
             try {
               let officialData = officialResult.data;
-              if(officialData.start){
+              if (officialData.start) {
                 if (officialData.status !== "active") {
                   reject({
                     response: -3,
@@ -86,132 +86,143 @@ module.exports.getRecips = (parameter) => {
                   });
                   return;
                 }
-                let date = moment(new Date(officialData.start._seconds) * 1000 )
-                .tz("America/Bogota")
-                .toDate();
+                let date = moment(new Date(officialData.start._seconds) * 1000)
+                  .tz("America/Bogota")
+                  .toDate();
 
                 let query = recipRef
-                .where("hqId", "==", parameter.hqId)
-                .where("dateFinished", ">=", date)
-                .orderBy("dateFinished", "desc")
-                .get()
-                .then(async (snapshot) => {
-                  try {
-                    let recips = [];
-                    if (!snapshot.empty) {
-                      snapshot.forEach((doc) => {
-                        let recipData = doc.data();
-                        if (!recipData.mensuality && !recipData.prepayFullDay) {
-                          recipData.id = doc.id;
-                          recips.push(recipData);
-                        }
-                      });
-                    }
-                    db.collection("recips")
-                      .where("hqId", "==", parameter.hqId)
-                      .where("prepayFullDay", "==", true)
-                      .where("dateFactured", ">=", date)
-                      .orderBy("dateFactured", "desc")
-                      .get()
-                      .then((snapshot) => {
-                        if (!snapshot.empty) {
-                          snapshot.forEach((doc) => {
-                            let recipData = doc.data();
+                  .where("hqId", "==", parameter.hqId)
+                  .where("dateFinished", ">=", date)
+                  .orderBy("dateFinished", "desc")
+                  .get()
+                  .then(async (snapshot) => {
+                    try {
+                      let recips = [];
+                      if (!snapshot.empty) {
+                        snapshot.forEach((doc) => {
+                          let recipData = doc.data();
+                          if (
+                            !recipData.mensuality &&
+                            !recipData.prepayFullDay
+                          ) {
                             recipData.id = doc.id;
                             recips.push(recipData);
-                          });
-                        }
-                        db.collection("recips")
-                          .where("hqId", "==", parameter.hqId)
-                          .where("mensuality", "==", true)
-                          .where("dateStart", ">=", date)
-                          .orderBy("dateStart", "desc")
-                          .get()
-                          .then((snapshot) => {
-                            if (!snapshot.empty) {
-                              snapshot.forEach((doc) => {
-                                let recipData = doc.data();
-                                recipData.id = doc.id;
-                                recips.push(recipData);
-                              });
-                            }
-                            if (recips.length === 0) {
-                              reject({ response: -1, message: `Recips not found` });
-                              return;
-                            } else {
-                              if (parameter.officialEmail) {
-                                let filteredRecips = recips.filter((recip) => {
-                                  return (
-                                    recip.officialEmail === parameter.officialEmail
-                                  );
+                          }
+                        });
+                      }
+                      db.collection("recips")
+                        .where("hqId", "==", parameter.hqId)
+                        .where("prepayFullDay", "==", true)
+                        .where("dateFactured", ">=", date)
+                        .orderBy("dateFactured", "desc")
+                        .get()
+                        .then((snapshot) => {
+                          if (!snapshot.empty) {
+                            snapshot.forEach((doc) => {
+                              let recipData = doc.data();
+                              recipData.id = doc.id;
+                              recips.push(recipData);
+                            });
+                          }
+                          db.collection("recips")
+                            .where("hqId", "==", parameter.hqId)
+                            .where("mensuality", "==", true)
+                            .where("dateStart", ">=", date)
+                            .orderBy("dateStart", "desc")
+                            .get()
+                            .then((snapshot) => {
+                              if (!snapshot.empty) {
+                                snapshot.forEach((doc) => {
+                                  let recipData = doc.data();
+                                  recipData.id = doc.id;
+                                  recips.push(recipData);
                                 });
-                                recips = [...filteredRecips];
                               }
-                              recips.map((recip) => {
-                                recip.dateStart = recip.dateStart.nanoseconds
-                                  ? recip.dateStart.toDate()
-                                  : recip.dateStart;
-                                recip.dateFinished = recip.dateFinished.nanoseconds
-                                  ? recip.dateFinished.toDate()
-                                  : recip.dateFinished;
-                                if (recip.totalTime)
-                                  recip.totalTime = recip.totalTime.nanoseconds
-                                    ? recip.totalTime.toDate()
-                                    : recip.totalTime;
-                              });
-                              recips.sort((a, b) => {
-                                if (
-                                  (a.mensuality || a.prepayFullDay) &&
-                                  !b.mensuality
-                                ) {
-                                  return b.dateFinished - a.dateStart;
-                                } else if (
-                                  (b.mensuality || b.prepayFullDay) &&
-                                  !a.mensuality
-                                ) {
-                                  return b.dateStart - a.dateFinished;
-                                } else if (
-                                  (a.mensuality || a.prepayFullDay) &&
-                                  (b.mensuality || b.prepayFullDay)
-                                ) {
-                                  return b.dateStart - a.dateStart;
-                                } else {
-                                  return b.dateFinished - a.dateFinished;
-                                }
-                              });
-                              if (parameter.limit) {
-                                resolve({
-                                  response: 1,
-                                  message: `Recips found`,
-                                  data: {
-                                    total: recips.slice(0, parameter.limit),
-                                  },
+                              if (recips.length === 0) {
+                                reject({
+                                  response: -1,
+                                  message: `Recips not found`,
                                 });
+                                return;
                               } else {
-                                resolve({
-                                  response: 1,
-                                  message: `Recips found`,
-                                  data: recips,
+                                if (parameter.officialEmail) {
+                                  let filteredRecips = recips.filter(
+                                    (recip) => {
+                                      return (
+                                        recip.officialEmail ===
+                                        parameter.officialEmail
+                                      );
+                                    }
+                                  );
+                                  recips = [...filteredRecips];
+                                }
+                                recips.map((recip) => {
+                                  recip.dateStart = recip.dateStart.nanoseconds
+                                    ? recip.dateStart.toDate()
+                                    : recip.dateStart;
+                                  recip.dateFinished = recip.dateFinished
+                                    .nanoseconds
+                                    ? recip.dateFinished.toDate()
+                                    : recip.dateFinished;
+                                  if (recip.totalTime)
+                                    recip.totalTime = recip.totalTime
+                                      .nanoseconds
+                                      ? recip.totalTime.toDate()
+                                      : recip.totalTime;
                                 });
+                                recips.sort((a, b) => {
+                                  if (
+                                    (a.mensuality || a.prepayFullDay) &&
+                                    !b.mensuality
+                                  ) {
+                                    return b.dateFinished - a.dateStart;
+                                  } else if (
+                                    (b.mensuality || b.prepayFullDay) &&
+                                    !a.mensuality
+                                  ) {
+                                    return b.dateStart - a.dateFinished;
+                                  } else if (
+                                    (a.mensuality || a.prepayFullDay) &&
+                                    (b.mensuality || b.prepayFullDay)
+                                  ) {
+                                    return b.dateStart - a.dateStart;
+                                  } else {
+                                    return b.dateFinished - a.dateFinished;
+                                  }
+                                });
+                                if (parameter.limit) {
+                                  resolve({
+                                    response: 1,
+                                    message: `Recips found`,
+                                    data: {
+                                      total: recips.slice(0, parameter.limit),
+                                    },
+                                  });
+                                } else {
+                                  resolve({
+                                    response: 1,
+                                    message: `Recips found`,
+                                    data: recips,
+                                  });
+                                }
                               }
-                            }
-                          });
-                      });
-                  } catch (err) {
-                    console.log(err);
-                    reject(err);
-                  }
-                })
-                .catch((err) => {
-                  console.log("Error getting documents", err);
-                  reject({ response: 0, err });
-                  return;
-                });
+                            });
+                        });
+                    } catch (err) {
+                      console.log(err);
+                      reject(err);
+                    }
+                  })
+                  .catch((err) => {
+                    console.log("Error getting documents", err);
+                    reject({ response: 0, err });
+                    return;
+                  });
               }
-            }catch(err){
-              console.log('err', err)
+            } catch (err) {
+              console.log("err", err);
             }
-          })
+          });
       } else {
         let query = recipRef
           .where("officialEmail", "==", parameter.officialEmail)
@@ -445,139 +456,3 @@ module.exports.getRecipsByPlate = (parameter) => {
       });
   });
 };
-
-// module.exports.migrateRecips = () => {
-//     return new Promise((resolve, reject) => {
-//         const db = admin.firestore()
-//         db.collection("recips")
-//             .orderBy("dateFinished")
-//             .get()
-//             .then(snapshot => {
-//                 if (snapshot.empty) {
-//                     console.log("empty")
-//                 }
-//                 snapshot.forEach(async (doc) => {
-
-//                     if (Number(doc.id.substr(3,8)) > 39461) {
-//                         let data = doc.data()
-//                         let numberId = Number(doc.id.substr(3,8)) + 1
-//                         await db.collection("recips").doc("PLL" + numberId).set(data)
-//                         //if (Number(doc.id.substr(3,8)) === 39303) await db.collection("recips").doc("PLL" + 3930).set(data)
-//                     }
-//                 })
-
-//             })
-//     })
-// }
-
-// module.exports.check = () => {
-//     return new Promise((resolve, reject)=> {
-//         const db = admin.firestore();
-//         db.collection('headquarters')
-//         .doc("GwPIopvdwylEq5JtiY35")
-//         .get()
-//         .then(doc=> {
-//             let plates = []
-//             doc.data().reservations.forEach(reserve => {
-//                     plates.push(reserve.plate)
-//             })
-//             db.collection('mensualities')
-//                 .get()
-//                 .then(snapshot => {
-//                     snapshot.forEach(doc => {
-//                         if(doc.data().status === "active") {
-//                             console.log("---------------------------------")
-//                             console.log(`Mensuality id: ${doc.id}`)
-//                             console.log()
-//                             console.log(`Mensuality capacity: ${doc.data().capacity}`)
-//                             console.log(`Mensuality parkedPlates: ${doc.data().parkedPlatesList.length}`)
-//                             console.log(`Mensuality parkedPlatesList: ${doc.data().parkedPlatesList}`)
-
-//                             let menplates = doc.data().plates
-//                             menplates.forEach(menplate => {
-//                                 if(plates.includes(menplate)) console.log(menplate)
-//                             })
-//                         }
-//                     })
-//                 })
-//         })
-//     })
-// }
-
-// module.exports.countTransactions = () => {
-//     return new Promise((resolve, reject) => {
-//       const db = admin.firestore();
-//       db.collection("recips")
-//         .get()
-//         .then((snapshot) => {
-//           let march = [];
-//           let april = [];
-//           let may = [];
-//           console.log("recips: ", snapshot.size);
-//           snapshot.forEach((doc) => {
-//             let data = doc.data();
-//             let month;
-//             if (data.mensuality || data.prepayFullDay) {
-//               month = moment(data.dateStart.toDate())
-//                 .tz("America/Bogota")
-//                 .month();
-//             } else {
-//               month = moment(data.dateFinished.toDate())
-//                 .tz("America/Bogota")
-//                 .month();
-//             }
-//             if (month === 2) march.push(data);
-//             if (month === 3) april.push(data);
-//             if (month === 4) may.push(data);
-//           });
-//           console.log(march.length, april.length, may.length);
-  
-//           db.collection("mensualityUsersParks")
-//             .get()
-//             .then((snapshot) => {
-//               console.log(snapshot.size);
-//               let march = [];
-//               let april = [];
-//               let may = [];
-//               snapshot.forEach((doc) => {
-//                 let data = doc.data();
-//                 let month;
-//                 if (data.mensuality || data.prepayFullDay) {
-//                   month = moment(data.dateStart.toDate())
-//                     .tz("America/Bogota")
-//                     .month();
-//                 } else {
-//                   month = moment(data.dateFinished.toDate())
-//                     .tz("America/Bogota")
-//                     .month();
-//                 }
-//                 if (month === 2) march.push(data);
-//                 if (month === 3) april.push(data);
-//                 if (month === 4) may.push(data);
-//               });
-//               console.log(march.length, april.length, may.length);
-//             });
-  
-//           resolve({ response: 1, message: "done" });
-//         });
-//     });
-//   };
-  
-// module.exports.migratePrepayFullDay = () => {
-//   return new Promise((resolve, reject) => {
-//     const db = admin.firestore();
-//     db.collection("recips")
-//       .where("prepayFullDay", "==", true)
-//       .get()
-//       .then((snapshot) => {
-//         snapshot.forEach(async (doc) => {
-//           let data = doc.data();
-//           await db
-//             .collection("recips")
-//             .doc(doc.id)
-//             .update({ dateFactured: data.dateStart });
-//         });
-//         resolve("done")
-//       });
-//   });
-// };

@@ -24,9 +24,10 @@ module.exports.createUser = async (parameter) => {
         }
         if (parameter.plates) {
           parameter.plates.map((plate) =>
-            cars.push({ plate: plate, brand: parameter.brand })
+            cars.push({ plate: plate, brand: parameter.brand, vehicleType: parameter.vehicleType })
           );
           delete parameter.brand;
+          delete parameter.vehicleType;
         }
 
         Object.assign(parameter, {
@@ -43,7 +44,7 @@ module.exports.createUser = async (parameter) => {
             creationDate: moment().tz("America/Bogota").toDate(),
           },
           isMonthlyUser: parameter.monthlyUser ? parameter.monthlyUser : false,
-          balance: 0
+          balance: 0,
         });
         if (parameter.monthlyUser) {
           delete parameter.monthlyUser;
@@ -76,7 +77,7 @@ module.exports.createUser = async (parameter) => {
           cars: parameter.plate ? [{ plate: parameter.plate, brand: "" }] : [],
           plates: parameter.plate ? [parameter.plate] : [],
           isMonthlyUser: parameter.monthlyUser ? parameter.monthlyUser : false,
-          balance: 0
+          balance: 0,
         });
         delete parameter.plate;
       }
@@ -565,94 +566,29 @@ module.exports.getUserRecips = async (parameter) => {
 };
 
 module.exports.bulkCreateUser = (parameter) => {
-    return new Promise((resolve, reject) => {
-        try {
-            let promises = [];
-            parameter.users.forEach(user => {
-                user.type = "full"
-                user.expoToken = "no"
-                user.email = "no"
-                promises.push(this.createUser(user))
-            })
-            let result = Promise.all(promises)
-            result.then(() => {
-                resolve({ response: 1, message: `Users created` })
-            })
-            .catch(err => {
-                console.log('Error bulk create user', err)
-                reject({ response: 0, err: JSON.stringify(err, 2) });
-                return;
-            })
-        } catch (err) {
-            console.log('Error bulkCreateUser', err);
-            reject({ response: 0, err: JSON.stringify(err, 2) });
-            return;
-        }
-    })
-}
-
-// module.exports.getUsers = async (parameter) => {
-//     return new Promise (async (resolve, reject) => {
-//         try {
-//             const db = admin.firestore();
-//             let userRef = db.collection('users').size()
-//             console.log(userRef)
-//         } catch (err) {
-//             console.log('Error fetching recips');
-//             reject({ response: 0, err: JSON.stringify(err, 2)});
-//             return
-//         }
-//     })
-// }
-
-// module.exports.countMensualities = () => {
-//     return new Promise ((resolve, reject)=> {
-//         const db = admin.firestore();
-//         db.collection("mensualities")
-//         .where("status", "==", "active")
-//         .get()
-//         .then(snapshot => {
-//             let cars= 0
-//             let bikes = 0
-//             snapshot.forEach(doc=> {
-//                 let data = doc.data()
-//                 if(data.vehicleType === "car") cars += Number(data.capacity)
-//                 else bikes += Number(data.capacity)
-//             })
-//             console.log(cars, bikes)
-//         })
-//     })
-// }
-
-//  module.exports.usersCount = () => {
-//      return new Promise((resolve, reject)=> {
-//         const db = admin.firestore();
-//         db.collection("users").get().then(snapshot => {
-//             let users = `Nombre,celular, ${"\n"}`
-//             console.log("dfnnsdgj")
-//             console.log(snapshot.size)
-//             // snapshot.forEach(doc => {
-//             //     let data = doc.data()
-//             //     users +=  `${data.name && data.name !== '' ? data.name + ' ' + data.lastName : 'No registrado'}, ${data.phone} ${"\n"}`
-//             // })
-//             // fs.writeFileSync('data.csv', users.toString())
-//         })
-//      })
-//  }
-
-module.exports.migrateBalance = () => {
-    return new Promise((resolve, reject)=>{
-        const db = admin.firestore();
-        db.collection("users").get().then(snapshot => {
-            let promises = [];
-            snapshot.forEach(async doc => {
-               promises.push( await db.collection("users").doc(doc.id).update({balance: 0}))
-            });
-            let results = Promise.all(promises)
-            results.then(result => {
-                resolve({message: "done", result})
-            })
-            .catch(err => reject(err))
+  return new Promise((resolve, reject) => {
+    try {
+      let promises = [];
+      parameter.users.forEach((user) => {
+        user.type = "full";
+        user.expoToken = "no";
+        user.email = "no";
+        promises.push(this.createUser(user));
+      });
+      let result = Promise.all(promises);
+      result
+        .then(() => {
+          resolve({ response: 1, message: `Users created` });
+        })
+        .catch((err) => {
+          console.log("Error bulk create user", err);
+          reject({ response: 0, err: JSON.stringify(err, 2) });
+          return;
         });
-    })
-}
+    } catch (err) {
+      console.log("Error bulkCreateUser", err);
+      reject({ response: 0, err: JSON.stringify(err, 2) });
+      return;
+    }
+  });
+};
