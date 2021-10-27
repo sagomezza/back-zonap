@@ -493,6 +493,7 @@ module.exports.updateVehicle = async (parameter) => {
           cars[parameter.vehicleIndex] = {
             plate: parameter.plate,
             brand: parameter.brand,
+            vehicleType: parameter.vehicleType
           };
           plates[parameter.vehicleIndex] = parameter.plate;
           await userRef.update({

@@ -1,62 +1,28 @@
 const reservationManager = require('../../src/headquarters/reservationManager')
-const { mockFirebase }  = require('firestore-jest-mock')
 const admin = require("firebase-admin");
 
+admin.initializeApp({ projectId: "potato" });
 
-beforeAll(() => {
-
-    const serviceAccount = require("./service_account_dev.json");
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: "https://zona-p-test.firebaseio.com",
-    });
- 
-    mockFirebase({
-        database: {
-            headquarters: {
-                iIJJcbIpMdVeYwEDK6mJ: {
-                    reservations: [
-                        {
-                            cash: 0,
-                            change: 0,
-                            dateStart: '2021-09-14T19:15:46.309Z',
-                            hqId: 'iIJJcbIpMdVeYwEDK6mJ',
-                            officialEmail: 'funcionario@zonap.test',
-                            phone: '+573017795191',
-                            plate: 'HOO33B',
-                            prepayFullDay: false,
-                            type: 'bike',
-                            verificationCode: 121412
-                        },
-                        {
-                            cash: 0,
-                            change: 0,
-                            dateStart: '2021-09-14T19:15:46.309Z',
-                            hqId: 'iIJJcbIpMdVeYwEDK6mJ',
-                            officialEmail: 'funcionario@zonap.test',
-                            phone: '+573017795192',
-                            plate: 'HOO333',
-                            prepayFullDay: false,
-                            type: 'car',
-                            verificationCode: 121413
-                        }
-                    ]
-                },
-                
-            }
+//-----------TEST CHECKPARKING FOR PK LLERAS--------
+describe('Test for checkParking function for PK Lleras', () => {
+    
+    it('Bike park less than 5 minutes it should return 0', async () => {
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795190",
+            "plate":"HOO33Z"
         }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(0)
     })
 
-});
-
-describe('Test for checkParking function', () => {
-    
     it('A bikeFraction it should return 1600 total ', async () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795191",
-            "plate":"HOO33B"
+            "phone": "+563017795191",
+            "plate":"HOO33A"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -67,7 +33,7 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795191",
+            "phone": "+563017795192",
             "plate":"HOO33B"
         }
 
@@ -79,8 +45,8 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795191",
-            "plate":"HOO33B"
+            "phone": "+563017795193",
+            "plate":"HOO33C"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -91,20 +57,31 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795191",
-            "plate":"HOO33B"
+            "phone": "+563017795194",
+            "plate":"HOO33D"
         }
 
         const result = await reservationManager.checkParking(parameter)
         expect(result.data.total).toBe(15000)
     });
 
+    it('Car park less than 5 minutes it should return 0', async () => {
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795100",
+            "plate":"HOO330"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(0)
+    })
+
     it('A carFraction it should return 2700 total ', async () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795192",
-            "plate":"HOO33B"
+            "phone": "+563017795195",
+            "plate":"HOO33E"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -115,8 +92,8 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795192",
-            "plate":"HOO33B"
+            "phone": "+563017795196",
+            "plate":"HOO33F"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -127,8 +104,8 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795192",
-            "plate":"HOO33B"
+            "phone": "+563017795197",
+            "plate":"HOO33G"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -139,8 +116,8 @@ describe('Test for checkParking function', () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795192",
-            "plate":"HOO33B"
+            "phone": "+563017795198",
+            "plate": "HOO33H"
         }
 
         const result = await reservationManager.checkParking(parameter)
@@ -148,63 +125,247 @@ describe('Test for checkParking function', () => {
     });
 });
 
+//---------------TETS WITH COUPONS---------------
 
-describe('we can query', () => {
-    mockFirebase({
-        database: {
-            headquarters: {
-                iIJJcbIpMdVeYwEDK6mJ: {
-                    reservations: [
-                        {
-                            cash: 0,
-                            change: 0,
-                            dateStart: '2021-09-14T19:15:46.309Z',
-                            hqId: 'iIJJcbIpMdVeYwEDK6mJ',
-                            officialEmail: 'funcionario@zonap.test',
-                            phone: '+573017795191',
-                            plate: 'HOO33B',
-                            prepayFullDay: false,
-                            type: 'bike',
-                            verificationCode: 121412
-                        },
-                        {
-                            cash: 0,
-                            change: 0,
-                            dateStart: '2021-09-14T19:15:46.309Z',
-                            hqId: 'iIJJcbIpMdVeYwEDK6mJ',
-                            officialEmail: 'funcionario@zonap.test',
-                            phone: '+573017795192',
-                            plate: 'HOO333',
-                            prepayFullDay: false,
-                            type: 'car',
-                            verificationCode: 121413
-                        }
-                    ]
-                },
-                
-            }
-        }
-    })
-
-    const firestore = admin.firestore()
-    let db = firestore.collection('headquarters');
-
-    console.log('MOOOOOOOCK', db.firestore.database.headquarters.iIJJcbIpMdVeYwEDK6mJ.reservations[0].phone)
-    test('db',() => {
-
-        // Assert that we call the correct firestore methods
-        expect(db.firestore.database.headquarters.iIJJcbIpMdVeYwEDK6mJ.reservations[0].phone).toBe('+573017795191');
-    });
-
-    // test('A carDay it should return 25200 total ', async () => {
+describe('Test for checkParking function with coupon for PK Lleras', () => {
+    
+    it('A bikeFraction with coupon it should return 750 total ', async () => {
 
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
-            "phone": "+573017795192",
+            "phone": "+563017795181",
+            "plate":"GOO33A"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(750)
+    });
+
+    it('A bikeHour with coupon it should return 1500 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795182",
+            "plate":"GOO33B"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(1500)
+    });
+
+    it('A bike Hour+Fraction with coupon it should return 2250 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795183",
+            "plate":"GOO33C"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(2250)
+    });
+
+    it('A bikeDay with coupon it should return 4500 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795184",
+            "plate":"GOO33D"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(4500)
+    });
+
+    it('A carFraction with coupon it should return 1500 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795185",
+            "plate":"GOO33E"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(1500)
+    });
+
+    it('A carHour with coupon it  should return 3000 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795186",
+            "plate":"GOO33F"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(3000)
+    });
+
+    it('A car Hour+Fraction with couponit should return 4500 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795187",
+            "plate":"GOO33G"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(4500)
+    });
+
+    it('A carDay with coupon it should return 9000 total ', async () => {
+
+        const parameter = {
+            "hqId": "iIJJcbIpMdVeYwEDK6mJ",
+            "phone": "+563017795188",
+            "plate": "GOO33H"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(9000)
+    });
+});
+
+//------------TEST CHECKPARKING FOR CLINICA MEDELLIN-----------
+describe('Test for checkParking function for Clínica Medellín Sótano', () => {
+    
+    it('Bike parked less than an hour should return 2100', async () => {
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795190",
+            "plate":"HOO33Z"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(2100)
+    })
+
+    it('Bike parked at least 1 hour and less than 1:15 should return 2600', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795191",
+            "plate":"HOO33A"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(2600)
+    });
+
+    it('Bike parked at least 1:15 and less than 1:30 should return 3100', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795192",
             "plate":"HOO33B"
         }
 
         const result = await reservationManager.checkParking(parameter)
-        expect(result.data.total).toBe(25200)
+        expect(result.data.total).toBe(3100)
+    });
 
+    it('Bike parked at least 1:30 and less than 1:345 should return 3500 ', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795193",
+            "plate":"HOO33C"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(3500)
+    });
+
+    it('Bike parked at least 1:45 and less than 2 hours should return 4200', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795194",
+            "plate":"HOO33D"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(4200)
+    });
+
+    it('Car parked less than an hour should return 4300', async () => {
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795100",
+            "plate":"HOO330"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(4300)
+    })
+
+    it('Car parked at least 1 hour and less than 1:15 should return 5400', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795195",
+            "plate":"HOO33E"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(5400)
+    });
+
+    it('Car parked at least 1:15 hour and less than 1:30 should return 6500', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795196",
+            "plate":"HOO33F"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(6500)
+    });
+
+    it('Car parked at least 1:30 hour and less than 1:45 should return 7600', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795197",
+            "plate":"HOO33G"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(7600)
+    });
+
+    it('Car parked at least 1:45 hour and less than 2 hours should return 8600', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795198",
+            "plate": "HOO33H"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(8600)
+    });
+});
+
+describe("Test for startParking function", () => {
+
+    it("startParkgin car hours should return response: 1", async () =>{
+
+        const parameter = {
+            plate: "CCC000",
+            hqId: "iIJJcbIpMdVeYwEDK6mJ",
+            dateStart: new Date(),
+            phone: "+573017795191",
+            prepayFullDay: false,
+            officialEmail: "funcionario@test.com",
+            type: "car",
+            cash: 0,
+            change: 0
+          }
+        
+        const result = await reservationManager.startParking(parameter);
+        console.log(result);
+        expect(result.response).toBe(1)
+    });
 });

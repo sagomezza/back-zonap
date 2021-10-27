@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "test": "jest",
-    "nodemon": "nodemon src/index.js"
+    "nodemon": "nodemon src/index.js",
+    "setup": "node test/headquarters/setup.js",
+    "unit-test": "export FIRESTORE_EMULATOR_HOST='localhost:8080' & node test/utils/setup.js & yarn test"
   },
   "author": "Santiago Gómez Zabala",
   "license": "ISC",

@@ -13,19 +13,30 @@ const sns = new SNS({
   region: "us-east-1",
 });
 
+<<<<<<< HEAD
 sns.setSMSAttributes(
   {
     attributes: {
       DefaultSMSType: "Transactional",
       TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap"
+=======
+if(process.env.ENVIRONMENT !== 'test') {
+  sns.setSMSAttributes(
+    {
+      attributes: {
+        DefaultSMSType: "Transactional",
+        //  TargetArn:
+        //    "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      },
+>>>>>>> 545392d (more unit-testing)
     },
-  },
-  function (error) {
-    if (error) {
-      console.log(error);
+    function (error) {
+      if (error) {
+        console.log(error);
+      }
     }
-  }
-);
+  );
+}
 
 module.exports.createMensuality = (parameter) => {
   return new Promise((resolve, reject) => {
