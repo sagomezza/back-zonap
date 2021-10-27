@@ -20,24 +20,27 @@ const sns = new SNS({
   region: "us-east-1",
 });
 
-sns.setSMSAttributes(
-  {
-    attributes: {
-      DefaultSMSType: "Transactional",
-      //TargetArn: "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+if(process.env.ENVIRONMENT !== 'test') {
+  sns.setSMSAttributes(
+    {
+      attributes: {
+        DefaultSMSType: "Transactional",
+        //  TargetArn:
+        //    "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+      },
     },
-  },
-  function (error) {
-    if (error) {
-      console.log(error);
+    function (error) {
+      if (error) {
+        console.log(error);
+      }
     }
-  }
-);
+  );
+}
 
 module.exports.startParking = (parameter) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log("Startted parking process for plate: ", parameter.plate);
+      console.log("Started parking process for plate: ", parameter.plate);
       if (Object.values(parameter).length === 0) {
         reject({ response: -1, message: `Error: Empty object` });
         return;
@@ -272,6 +275,12 @@ module.exports.startParking = (parameter) => {
                     });
                     return;
                   });
+
+                  resolve({
+                    response: 1,
+                    message: `The user ${parameter.plate} started succesfully the parking time`,
+                  });
+                  return;
                 } else {
                   const db = admin.firestore();
                   let paranoicRef = db
@@ -421,7 +430,7 @@ const calculateADay = (
 module.exports.checkParking = (parameter) => {
   return new Promise((resolve, reject) => {
     try {
-      console.log("checkParking called");
+      // console.log("checkParking called");
       if (Object.values(parameter).length === 0) {
         reject({ response: -1, message: `Error: Empty object` });
         return;
