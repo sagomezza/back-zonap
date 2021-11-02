@@ -11,13 +11,13 @@ const sns = new SNS({
   region: "us-east-1",
 });
 
-if(process.env.ENVIRONMENT !== 'test') {
+if(process.env.ENVIRONMENT !== 'unit-test') {
   sns.setSMSAttributes(
     {
       attributes: {
         DefaultSMSType: "Transactional",
-        //  TargetArn:
-        //    "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
+          TargetArn:
+            "arn:aws:sns:us-east-1:827728759512:ElasticBeanstalkNotifications-Environment-zonap",
       },
     },
     function (error) {

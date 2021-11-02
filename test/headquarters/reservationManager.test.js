@@ -5,7 +5,9 @@ admin.initializeApp({ projectId: "potato" });
 
 //-----------TEST CHECKPARKING FOR PK LLERAS--------
 describe('Test for checkParking function for PK Lleras', () => {
-    
+    jest.setTimeout(10000);
+
+    //--------------BIKES-----------------
     it('Bike park less than 5 minutes it should return 0', async () => {
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
@@ -64,7 +66,7 @@ describe('Test for checkParking function for PK Lleras', () => {
         const result = await reservationManager.checkParking(parameter)
         expect(result.data.total).toBe(15000)
     });
-
+    //--------------CARS-----------------
     it('Car park less than 5 minutes it should return 0', async () => {
         const parameter = {
             "hqId": "iIJJcbIpMdVeYwEDK6mJ",
@@ -229,6 +231,7 @@ describe('Test for checkParking function with coupon for PK Lleras', () => {
 //------------TEST CHECKPARKING FOR CLINICA MEDELLIN-----------
 describe('Test for checkParking function for Clínica Medellín Sótano', () => {
     
+    //--------------BIKES-----------------
     it('Bike parked less than an hour should return 2100', async () => {
         const parameter = {
             "hqId": "kPlPR3Rysv3uCsrUdcn2",
@@ -264,7 +267,7 @@ describe('Test for checkParking function for Clínica Medellín Sótano', () => 
         expect(result.data.total).toBe(3100)
     });
 
-    it('Bike parked at least 1:30 and less than 1:345 should return 3500 ', async () => {
+    it('Bike parked at least 1:30 and less than 1:45 should return 3500 ', async () => {
 
         const parameter = {
             "hqId": "kPlPR3Rysv3uCsrUdcn2",
@@ -288,6 +291,79 @@ describe('Test for checkParking function for Clínica Medellín Sótano', () => 
         expect(result.data.total).toBe(4200)
     });
 
+    it('Bike parked at least 2: and less than 2:15 hours should return 4700', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795134",
+            "plate":"HOO33T"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(4700)
+    });
+
+    it('Bike parked a day should return 10500', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017791134",
+            "plate":"HOO33V"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(10500)
+    });
+
+    it('Bike parked 4:45+ hours should return 10500', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017792134",
+            "plate":"HOO33X"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(10500)
+    });
+
+    it('Bike parked one day and fraction should return 12600', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017799134",
+            "plate":"HOO33Y"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(12600)
+    });
+
+    it('Bike parked less than half hour with validator should return 0', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017799130",
+            "plate":"HOO33Q"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(0)
+    });
+
+    it('Bike parked more than half hour with validator should return 2100', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563027799130",
+            "plate":"HOO33R"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(2100)
+    });
+
+    //----------------CARS------------------
     it('Car parked less than an hour should return 4300', async () => {
         const parameter = {
             "hqId": "kPlPR3Rysv3uCsrUdcn2",
@@ -345,6 +421,53 @@ describe('Test for checkParking function for Clínica Medellín Sótano', () => 
 
         const result = await reservationManager.checkParking(parameter)
         expect(result.data.total).toBe(8600)
+    });
+
+    it('Car parked at least 2:00 hour and less than 2:15 hours should return 9700', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017795128",
+            "plate": "HOO331"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(9700)
+    });
+    it('Car parked a > 4:45 hours should return 21500', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017791128",
+            "plate": "HOO321"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(21500)
+    });
+
+    it('Car parked 4:45+ should return 21500', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017792128",
+            "plate": "HOO322"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(21500)
+    });
+
+    it('Car parked one day and fraction should return 25800', async () => {
+
+        const parameter = {
+            "hqId": "kPlPR3Rysv3uCsrUdcn2",
+            "phone": "+563017793128",
+            "plate": "HOO332"
+        }
+
+        const result = await reservationManager.checkParking(parameter)
+        expect(result.data.total).toBe(25800)
     });
 });
 
