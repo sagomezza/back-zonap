@@ -239,11 +239,15 @@ module.exports.wompiPay = () => {
                 name: "Mensualidad de Zona P",
                 description: `Pago de mensualidad de tu carro en nuestro parqueadero ${hqData.name} de Zona P`,
                 total: hqData.monthlyCarPrice * 100,
+                hqId: hqData.id,
+                vehicleType: "car"
               })
               let bikeLink = await wompi.wompiRequestPaymentURL({
                 name: "Mensualidad de Zona P",
                 description: `Pago de mensualidad de tu carro en nuestro parqueadero ${hqData.name} de Zona P`,
                 total: hqData.monthlyBikePrice * 100,
+                hqId: hqData.id,
+                vehicleType: "bike"
               })
               carLink = carLink.link;
               bikeLink = bikeLink.link;
