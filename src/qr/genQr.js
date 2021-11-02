@@ -27,12 +27,9 @@ module.exports.generateQrForHQ = async (parameter) => {
         // QR DATA
         const hash = hashPoolId.data.hash;
         //console.log('[generateQrForHQ] ', hash)
-        const url = `http://zonapdigital.zonap.com?qr=${hash}`;
+        const url = "https://zonap.leancore.co/parkingId/iIJJcbIpMdVeYwEDK6mJ"        ;
         const qrURLBase64 = await createQRBase64(
-          JSON.stringify({
-            url,
-            price,
-          })
+          url
         );
         resolve({
           response: 1,
