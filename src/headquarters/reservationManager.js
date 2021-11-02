@@ -275,12 +275,6 @@ module.exports.startParking = (parameter) => {
                     });
                     return;
                   });
-
-                  resolve({
-                    response: 1,
-                    message: `The user ${parameter.plate} started succesfully the parking time`,
-                  });
-                  return;
                 } else {
                   const db = admin.firestore();
                   let paranoicRef = db
