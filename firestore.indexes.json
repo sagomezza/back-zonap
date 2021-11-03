@@ -1,0 +1,279 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "boxCloses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "mensualityUsersParks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "mensualityUsersParks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mensuality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "creditCardPay",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mensuality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateStart",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prepayFullDay",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFactured",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prepayFullDay",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateStart",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isParanoic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "mensuality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateStart",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prepayFullDay",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFactured",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "officialEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prepayFullDay",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateStart",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "plate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateFinished",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "shiftReports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "shiftReports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "hqId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateStart",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

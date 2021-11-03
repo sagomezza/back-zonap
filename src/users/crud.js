@@ -24,9 +24,10 @@ module.exports.createUser = async (parameter) => {
         }
         if (parameter.plates) {
           parameter.plates.map((plate) =>
-            cars.push({ plate: plate, brand: parameter.brand })
+            cars.push({ plate: plate, brand: parameter.brand, vehicleType: parameter.vehicleType })
           );
           delete parameter.brand;
+          delete parameter.vehicleType;
         }
 
         Object.assign(parameter, {
@@ -492,6 +493,7 @@ module.exports.updateVehicle = async (parameter) => {
           cars[parameter.vehicleIndex] = {
             plate: parameter.plate,
             brand: parameter.brand,
+            vehicleType: parameter.vehicleType
           };
           plates[parameter.vehicleIndex] = parameter.plate;
           await userRef.update({
