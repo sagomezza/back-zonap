@@ -402,7 +402,7 @@ const calculateADay = (
 ) => {
   let total = 0;
   if (fractionType === 'CMOS') {
-    if (halfHour && diff.minutes() < 31) {
+    if (halfHour && diff.minutes() < 31 && hours < 1) {
       return total = 0;
     }
     if (
