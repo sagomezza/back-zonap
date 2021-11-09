@@ -93,7 +93,6 @@ module.exports.readOfficial = (parameter) => {
                     snapshot.forEach((doc) => {
                         let data = doc.data();
                         data.id = doc.id;
-
                         if (
                             data &&
                             data.schedule.start &&
