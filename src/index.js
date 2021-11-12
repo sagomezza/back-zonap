@@ -112,18 +112,18 @@ const dueMonthlyTasks = cron.schedule("0 5 6 * *", function () {
     .catch((err) => console.log(err));
 });
 
-const paymentMonthlyTasks = cron.schedule("0 0 1 * *", function () {
-  crons
-    .wompiPay()
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((err) => console.log(err));
-});
+// const paymentMonthlyTasks = cron.schedule("0 0 1 * *", function () {
+//   crons
+//     .wompiPay()
+//     .then((res) => {
+//       console.log(res);
+//     })
+//     .catch((err) => console.log(err));
+// });
 
 recurrentTask.start();
 dueMonthlyTasks.start();
-paymentMonthlyTasks.start();
+// paymentMonthlyTasks.start();
 
 let hashCache = {};
 
