@@ -215,6 +215,7 @@ module.exports.wompiPay = () => {
         milliseconds: 59,
       })
       .toDate();
+      console.log(dueDate);
     const db = admin.firestore();
     db.collection("mensualities")
       .where("type", "==", "personal")

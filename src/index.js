@@ -94,6 +94,13 @@ const recurrentTask = cron.schedule("*/3 * * * * *", function () {
       //console.log(res)
     })
     .catch((err) => console.log(err));
+
+    // crons
+    // .wompiPay()
+    // .then((res) => {
+    //   console.log(res);
+    // })
+    // .catch((err) => console.log(err));
 });
 
 const dueMonthlyTasks = cron.schedule("0 5 6 * *", function () {
@@ -918,3 +925,5 @@ app.post("/wompiResponse", (req, res) =>
     .then((result) => res.send(result))
     .catch((err) => res.status(422).send(err))
 );
+
+app.get("/wompiResponse", (req, res) => console.log(res.header));
